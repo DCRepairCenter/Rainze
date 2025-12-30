@@ -42,14 +42,14 @@ class FTSConfig:
         db_path: 数据库路径 / Database path
         table_name: 表名 / Table name
         fts_table_name: FTS 虚拟表名 / FTS virtual table name
-        tokenizer: 分词器 / Tokenizer
+        tokenizer: 分词器 / Tokenizer (trigram for Chinese support)
         top_k: 默认返回数量 / Default return count
     """
 
     db_path: Path = Path("./data/memory.db")
     table_name: str = "memories"
     fts_table_name: str = "memories_fts"
-    tokenizer: str = "unicode61"  # 支持中文 / Supports Chinese
+    tokenizer: str = "trigram"  # trigram 支持中文子串匹配 / trigram for Chinese
     top_k: int = 15
 
 
@@ -129,44 +129,24 @@ class FTSSearcher:
             )
         """)
 
-        # 创建 FTS5 虚拟表 / Create FTS5 virtual table
+        # 创建 rowid 映射表（因为主表使用 TEXT 主键）
+        # Create rowid mapping table (since main table uses TEXT primary key)
         await self._db.execute(f"""
-            CREATE VIRTUAL TABLE IF NOT EXISTS {self.config.fts_table_name}
-            USING fts5(
-                content,
-                content={self.config.table_name},
-                content_rowid=rowid,
-                tokenize='{self.config.tokenizer}'
+            CREATE TABLE IF NOT EXISTS {self.config.table_name}_rowid (
+                row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                memory_id TEXT UNIQUE NOT NULL
             )
         """)
 
-        # 创建触发器保持 FTS 同步 / Create triggers to keep FTS in sync
+        # 创建 FTS5 虚拟表（独立模式，不使用 external content）
+        # Create FTS5 virtual table (standalone mode, no external content)
         await self._db.execute(f"""
-            CREATE TRIGGER IF NOT EXISTS {self.config.table_name}_ai
-            AFTER INSERT ON {self.config.table_name} BEGIN
-                INSERT INTO {self.config.fts_table_name}(rowid, content)
-                VALUES (NEW.rowid, NEW.content);
-            END
-        """)
-
-        await self._db.execute(f"""
-            CREATE TRIGGER IF NOT EXISTS {self.config.table_name}_ad
-            AFTER DELETE ON {self.config.table_name} BEGIN
-                INSERT INTO {self.config.fts_table_name}(
-                    {self.config.fts_table_name}, rowid, content
-                ) VALUES ('delete', OLD.rowid, OLD.content);
-            END
-        """)
-
-        await self._db.execute(f"""
-            CREATE TRIGGER IF NOT EXISTS {self.config.table_name}_au
-            AFTER UPDATE ON {self.config.table_name} BEGIN
-                INSERT INTO {self.config.fts_table_name}(
-                    {self.config.fts_table_name}, rowid, content
-                ) VALUES ('delete', OLD.rowid, OLD.content);
-                INSERT INTO {self.config.fts_table_name}(rowid, content)
-                VALUES (NEW.rowid, NEW.content);
-            END
+            CREATE VIRTUAL TABLE IF NOT EXISTS {self.config.fts_table_name}
+            USING fts5(
+                memory_id,
+                content,
+                tokenize='{self.config.tokenizer}'
+            )
         """)
 
         await self._db.commit()
@@ -219,19 +199,38 @@ class FTSSearcher:
         if not clean_query:
             return []
 
-        # 构建 SQL 查询 / Build SQL query
-        sql = f"""
-            SELECT
-                m.id,
-                bm25({self.config.fts_table_name}) as score
-            FROM {self.config.fts_table_name} fts
-            JOIN {self.config.table_name} m ON fts.rowid = m.rowid
-            WHERE fts.content MATCH ?
-                AND m.is_archived = 0
-                AND m.importance >= ?
-        """
+        # 对于中文，使用 LIKE 查询（FTS5 unicode61 不支持中文分词）
+        # For Chinese, use LIKE query (FTS5 unicode61 doesn't support Chinese tokenization)
+        # 检测是否包含中文字符 / Check if contains Chinese characters
+        has_chinese = any("\u4e00" <= c <= "\u9fff" for c in clean_query)
 
-        params: List[Any] = [clean_query, min_importance]
+        if has_chinese:
+            # 使用 LIKE 查询（支持中文）
+            # Use LIKE query (supports Chinese)
+            sql = f"""
+                SELECT
+                    m.id,
+                    m.importance as score
+                FROM {self.config.table_name} m
+                WHERE m.content LIKE ?
+                    AND m.is_archived = 0
+                    AND m.importance >= ?
+            """
+            params: List[Any] = [f"%{clean_query}%", min_importance]
+        else:
+            # 使用 FTS5 查询（英文等）
+            # Use FTS5 query (for English, etc.)
+            sql = f"""
+                SELECT
+                    fts.memory_id,
+                    bm25({self.config.fts_table_name}) as score
+                FROM {self.config.fts_table_name} fts
+                JOIN {self.config.table_name} m ON fts.memory_id = m.id
+                WHERE fts.content MATCH ?
+                    AND m.is_archived = 0
+                    AND m.importance >= ?
+            """
+            params = [clean_query, min_importance]
 
         # 添加时间窗口过滤 / Add time window filter
         if time_window is not None:
@@ -248,16 +247,21 @@ class FTSSearcher:
             sql += f" AND m.memory_type IN ({placeholders})"
             params.extend(memory_types)
 
-        sql += " ORDER BY score LIMIT ?"
+        sql += " ORDER BY score DESC LIMIT ?"
         params.append(k)
 
         # 执行查询 / Execute query
         try:
             async with self._db.execute(sql, params) as cursor:
                 rows = await cursor.fetchall()
-                # BM25 返回负值，分数越低越好，转换为正分数
-                # BM25 returns negative values, lower is better, convert to positive
-                results = [(row[0], -row[1]) for row in rows]
+                if has_chinese:
+                    # LIKE 查询返回 importance 作为分数
+                    # LIKE query returns importance as score
+                    results = [(row[0], float(row[1])) for row in rows]
+                else:
+                    # BM25 返回负值，分数越低越好，转换为正分数
+                    # BM25 returns negative values, lower is better, convert to positive
+                    results = [(row[0], -row[1]) for row in rows]
                 return results
         except aiosqlite.OperationalError as e:
             logger.warning(f"FTS5 search failed: {e}, query: {query}")
@@ -279,6 +283,7 @@ class FTSSearcher:
 
         import json
 
+        # 插入主表 / Insert into main table
         sql = f"""
             INSERT OR REPLACE INTO {self.config.table_name}
             (id, content, memory_type, importance, created_at, updated_at,
@@ -305,6 +310,19 @@ class FTSSearcher:
         )
 
         await self._db.execute(sql, params)
+
+        # 同步到 FTS5 表 / Sync to FTS5 table
+        # 先删除旧记录（如果存在）/ Delete old record if exists
+        await self._db.execute(
+            f"DELETE FROM {self.config.fts_table_name} WHERE memory_id = ?",
+            (memory.id,),
+        )
+        # 插入新记录 / Insert new record
+        await self._db.execute(
+            f"INSERT INTO {self.config.fts_table_name} (memory_id, content) VALUES (?, ?)",
+            (memory.id, memory.content),
+        )
+
         await self._db.commit()
 
     async def get_memory_by_id(self, memory_id: str) -> Optional[Dict[str, Any]]:
@@ -407,8 +425,14 @@ class FTSSearcher:
         if not self._initialized or self._db is None:
             raise RuntimeError("FTSSearcher not initialized. Call initialize() first.")
 
-        sql = f"DELETE FROM {self.config.table_name} WHERE id = ?"
+        # 从 FTS5 表删除 / Delete from FTS5 table
+        await self._db.execute(
+            f"DELETE FROM {self.config.fts_table_name} WHERE memory_id = ?",
+            (memory_id,),
+        )
 
+        # 从主表删除 / Delete from main table
+        sql = f"DELETE FROM {self.config.table_name} WHERE id = ?"
         result = await self._db.execute(sql, (memory_id,))
         await self._db.commit()
 

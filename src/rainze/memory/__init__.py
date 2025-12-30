@@ -22,6 +22,10 @@ Exports:
     - MemoryIndexItem: 记忆索引项 / Memory index item
     - TimeWindow: 时间窗口 / Time window
     - FTSSearcher: FTS5 检索器 / FTS5 searcher
+    - VectorSearcher: FAISS 向量检索器 / FAISS vector searcher
+    - TextEmbedder: 文本嵌入器 / Text embedder
+    - HybridRetriever: 混合检索器 / Hybrid retriever
+    - RetrievalStrategy: 检索策略 / Retrieval strategy
 
 Exception Exports:
     - MemoryError: 基础异常 / Base exception
@@ -70,7 +74,18 @@ from .models import (
 )
 
 # Retrieval / 检索系统
-from .retrieval import FTSConfig, FTSSearcher
+from .retrieval import (
+    EmbedderConfig,
+    EmbeddingResult,
+    FTSConfig,
+    FTSSearcher,
+    HybridRetriever,
+    HybridRetrieverConfig,
+    RetrievalStrategy,
+    TextEmbedder,
+    VectorSearcher,
+    VectorSearcherConfig,
+)
 
 __all__: list[str] = [
     # Main manager / 主管理器
@@ -90,6 +105,14 @@ __all__: list[str] = [
     # Retrieval / 检索系统
     "FTSSearcher",
     "FTSConfig",
+    "VectorSearcher",
+    "VectorSearcherConfig",
+    "TextEmbedder",
+    "EmbedderConfig",
+    "EmbeddingResult",
+    "HybridRetriever",
+    "HybridRetrieverConfig",
+    "RetrievalStrategy",
     # Exceptions / 异常
     "MemoryError",
     "MemoryNotFoundError",
