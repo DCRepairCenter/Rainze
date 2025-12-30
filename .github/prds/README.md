@@ -1,22 +1,22 @@
 <a id="readme-top"></a>
 
 ## 关于本目录
-模块级 PRD — 各模块子 PRD 及方法签名/类布局描述。
+PRD 文档集 — Rainze 的产品需求文档集合，含主 PRD 与模块索引。
 
 ### 主要内容
-- 模块 PRD: MOD-*.md
-- 模块索引: README.md (原有内容)
+- 主 PRD: PRD-Rainze.md
+- 模块 PRD 索引: modules/
 
 ## 快速开始
 ### 先决条件
 - 阅读主 PRD (.github/prds/PRD-Rainze.md) 与技术栈 (.github/techstacks/TECH-Rainze.md) 保持对齐。  
 
 ### 使用
-- 实现/改动前先查对应模块 PRD 获取接口布局。
+- 需求对齐时先读主 PRD，再读对应模块 PRD。
 
 ## 路线图
-- [ ] 保持模块 PRD 与实现同步（版本/接口/契约）。  
-- [ ] 补充缺失的示例和签名说明。  
+- [ ] 按发布节奏更新 PRD 版本。  
+- [ ] 为每次变更记录摘要。  
 - [x] 已补充 README/ROADMAP/联系信息占位，待持续完善。  
 
 ## 贡献

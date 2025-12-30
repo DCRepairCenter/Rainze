@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rainze Application Settings",
+  "description": "应用全局配置 / Application global configuration",
+  
+  "app_name": "Rainze",
+  "version": "0.1.0",
+  "debug": false,
+  
+  "data_dir": "./data",
+  "config_dir": "./config",
+  
+  "logging": {
+    "level": "INFO",
+    "log_dir": "./data/logs",
+    "json_format": true,
+    "max_file_size_mb": 10,
+    "retention_days": 7
+  },
+  
+  "performance": {
+    "event_queue_size": 1000,
+    "config_cache_ttl_seconds": 300,
+    "startup_timeout_seconds": 30,
+    "shutdown_timeout_seconds": 10
+  }
+}

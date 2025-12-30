@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **项目初始化** - 完整的 Python + Rust 混合项目结构
+  - `pyproject.toml` - Python 包配置 (uv + hatchling)
+  - `rainze_core/Cargo.toml` - Rust crate 配置 (PyO3 + Maturin)
+  - `src/rainze/` - Python 源码目录结构
+  - `config/` - JSON 配置文件 (app_settings, api_settings, scene_tier_mapping)
+  - `.pre-commit-config.yaml` - 预提交钩子配置
+  - `.gitignore` - Git 忽略规则
+  - `tests/` - 测试框架 (pytest)
+- **Rust 核心模块** (rainze_core)
+  - `SystemMonitor` - 系统监控 (CPU/内存/会议应用检测)
+  - 占位模块: `memory_search`, `text_process`
+- **开发工具配置**
+  - ruff (linter + formatter)
+  - mypy (type checker)
+  - pytest + pytest-asyncio
+  - pre-commit hooks
+
+- **文档梳理** - 为全仓目录补充 README/CHANGELOG/TODO，占位联系信息与路线图，便于后续迭代对齐 PRD/TECH。  
 - **跨模块契约规范** (PRD §0.15) - 统一数据结构和接口定义
   - `EmotionTag` - 情感标签契约 (core.contracts.emotion)
   - `SceneType/ResponseTier` - 场景分类契约 (core.contracts.scene)

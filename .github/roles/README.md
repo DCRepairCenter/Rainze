@@ -1,22 +1,21 @@
 <a id="readme-top"></a>
 
 ## 关于本目录
-模块级 PRD — 各模块子 PRD 及方法签名/类布局描述。
+角色定义 — 项目内角色与职责定义。
 
 ### 主要内容
-- 模块 PRD: MOD-*.md
-- 模块索引: README.md (原有内容)
+- *.agent.md / *.instructions.md 关联
 
 ## 快速开始
 ### 先决条件
 - 阅读主 PRD (.github/prds/PRD-Rainze.md) 与技术栈 (.github/techstacks/TECH-Rainze.md) 保持对齐。  
 
 ### 使用
-- 实现/改动前先查对应模块 PRD 获取接口布局。
+- 参考角色说明分配职责。
 
 ## 路线图
-- [ ] 保持模块 PRD 与实现同步（版本/接口/契约）。  
-- [ ] 补充缺失的示例和签名说明。  
+- [ ] 补充缺失角色或责任矩阵。  
+- [ ] 保持与团队结构同步。  
 - [x] 已补充 README/ROADMAP/联系信息占位，待持续完善。  
 
 ## 贡献

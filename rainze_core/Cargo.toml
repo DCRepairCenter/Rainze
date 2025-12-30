@@ -1,0 +1,76 @@
+# Rainze Rust Core
+# Rust 性能模块 / Rust Performance Module
+#
+# 提供记忆检索、系统监控、文本处理等性能关键功能。
+# Provides memory search, system monitoring, text processing, etc.
+#
+# Reference:
+#     - TECH: ../.github/techstacks/TECH-Rainze.md §3.2
+#     - MOD: ../.github/prds/modules/MOD-RustCore.md
+
+[package]
+name = "rainze_core"
+version = "0.1.0"
+edition = "2024"
+authors = ["Rainze Team"]
+description = "High-performance Rust core for Rainze AI Desktop Pet"
+license = "MIT"
+repository = "https://github.com/rainze-team/rainze"
+readme = "README.md"
+keywords = ["pyo3", "faiss", "desktop-pet", "ai"]
+categories = ["api-bindings", "development-tools"]
+
+[lib]
+name = "rainze_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# PyO3 - Python 绑定 / Python Bindings
+pyo3 = { version = "0.23", features = ["extension-module"] }
+
+# 系统信息 / System Information
+sysinfo = "0.32"
+
+# 异步运行时 / Async Runtime
+tokio = { version = "1", features = ["full"] }
+
+# 并行计算 / Parallel Computing
+rayon = "1.10"
+
+# 错误处理 / Error Handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# 序列化 / Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 日志 / Logging
+tracing = "0.1"
+
+# Windows API (条件编译 / Conditional Compilation)
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_ProcessStatus",
+] }
+
+[dev-dependencies]
+# 测试 / Testing
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# TODO: 添加基准测试 / Add benchmarks
+# [[bench]]
+# name = "memory_search"
+# harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
