@@ -108,7 +108,13 @@ def get_scene_tier_table(
         raw_data = json.load(f)
 
     _scene_tier_cache = {}
+    # 跳过 JSON Schema 元数据字段 / Skip JSON Schema metadata fields
+    metadata_keys = {"$schema", "title", "description"}
     for scene_id, mapping in raw_data.items():
+        if scene_id in metadata_keys:
+            continue
+        if not isinstance(mapping, dict):
+            continue
         _scene_tier_cache[scene_id] = SceneTierMapping(
             scene_type=SceneType[mapping["scene_type"]],
             default_tier=ResponseTier[mapping["default_tier"]],

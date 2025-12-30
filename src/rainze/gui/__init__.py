@@ -26,6 +26,7 @@ from .main_window import DisplayMode, MainWindow
 from .chat_bubble import ChatBubble
 from .system_tray import SystemTray
 from .menu_system import MenuItem, MenuSystem
+from .input_panel import InputPanel
 
 __all__ = [
     "TransparentWidget",
@@ -35,4 +36,5 @@ __all__ = [
     "SystemTray",
     "MenuItem",
     "MenuSystem",
+    "InputPanel",
 ]

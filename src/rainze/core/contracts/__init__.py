@@ -38,6 +38,10 @@ from .interaction import (
     InteractionResponse,
     InteractionSource,
 )
+from .ucm import (
+    ITierHandler,
+    IUnifiedContextManager,
+)
 
 # TODO: Rust bridge contracts 待实现
 # from .rust_bridge import (
@@ -45,7 +49,6 @@ from .interaction import (
 #     IRustSystemMonitor,
 #     IRustTextProcess,
 # )
-# from .ucm import IUnifiedContextManager
 
 __all__: list[str] = [
     # Emotion contracts / 情感契约
@@ -60,10 +63,11 @@ __all__: list[str] = [
     "InteractionSource",
     "InteractionRequest",
     "InteractionResponse",
+    # UCM contracts / UCM 契约
+    "IUnifiedContextManager",
+    "ITierHandler",
     # Rust bridge contracts / Rust 桥接契约 (TODO)
     # "IRustMemorySearch",
     # "IRustSystemMonitor",
     # "IRustTextProcess",
-    # UCM contract / UCM 契约 (TODO)
-    # "IUnifiedContextManager",
 ]
