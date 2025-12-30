@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scene-Tier Mapping Configuration",
+  "description": "场景类型与响应层级的映射配置 / Scene type to response tier mapping",
+  
+  "click": {
+    "scene_type": "SIMPLE",
+    "default_tier": "TIER1_TEMPLATE",
+    "timeout_ms": 50,
+    "memory_retrieval": "none",
+    "fallback_chain": [],
+    "allow_override": false
+  },
+  
+  "drag": {
+    "scene_type": "SIMPLE",
+    "default_tier": "TIER1_TEMPLATE",
+    "timeout_ms": 50,
+    "memory_retrieval": "none",
+    "fallback_chain": [],
+    "allow_override": false
+  },
+  
+  "hover": {
+    "scene_type": "SIMPLE",
+    "default_tier": "TIER1_TEMPLATE",
+    "timeout_ms": 50,
+    "memory_retrieval": "none",
+    "fallback_chain": [],
+    "allow_override": false
+  },
+  
+  "hourly_chime": {
+    "scene_type": "MEDIUM",
+    "default_tier": "TIER2_RULE",
+    "timeout_ms": 100,
+    "memory_retrieval": "facts_summary",
+    "fallback_chain": ["TIER1_TEMPLATE"],
+    "allow_override": true
+  },
+  
+  "system_warning": {
+    "scene_type": "MEDIUM",
+    "default_tier": "TIER2_RULE",
+    "timeout_ms": 100,
+    "memory_retrieval": "none",
+    "fallback_chain": ["TIER1_TEMPLATE"],
+    "allow_override": false
+  },
+  
+  "conversation": {
+    "scene_type": "COMPLEX",
+    "default_tier": "TIER3_LLM",
+    "timeout_ms": 3000,
+    "memory_retrieval": "full",
+    "fallback_chain": ["TIER2_RULE", "TIER1_TEMPLATE"],
+    "allow_override": true
+  },
+  
+  "emotion_analysis": {
+    "scene_type": "COMPLEX",
+    "default_tier": "TIER3_LLM",
+    "timeout_ms": 2000,
+    "memory_retrieval": "full",
+    "fallback_chain": ["TIER2_RULE", "TIER1_TEMPLATE"],
+    "allow_override": true
+  },
+  
+  "tool_execution": {
+    "scene_type": "MEDIUM",
+    "default_tier": "TIER2_RULE",
+    "timeout_ms": 500,
+    "memory_retrieval": "facts_summary",
+    "fallback_chain": ["TIER1_TEMPLATE"],
+    "allow_override": true
+  },
+  
+  "game_interaction": {
+    "scene_type": "SIMPLE",
+    "default_tier": "TIER1_TEMPLATE",
+    "timeout_ms": 50,
+    "memory_retrieval": "none",
+    "fallback_chain": [],
+    "allow_override": false
+  },
+  
+  "proactive_greeting": {
+    "scene_type": "MEDIUM",
+    "default_tier": "TIER2_RULE",
+    "timeout_ms": 200,
+    "memory_retrieval": "facts_summary",
+    "fallback_chain": ["TIER1_TEMPLATE"],
+    "allow_override": true
+  }
+}

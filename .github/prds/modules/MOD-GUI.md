@@ -1,12 +1,13 @@
 # MOD-GUI - GUI界面模块
 
-> **模块版本**: v1.0.0  
+> **模块版本**: v1.1.0  
 > **创建时间**: 2025-12-30  
-> **关联PRD**: PRD-Rainze.md v3.0.3  
-> **关联技术栈**: TECH-Rainze.md v1.0.1  
+> **最后更新**: 2025-12-30  
+> **关联PRD**: PRD-Rainze.md v3.1.0 第一部分 §12, §14, §0.14  
+> **关联技术栈**: TECH-Rainze.md v1.0.1 §3.3  
 > **模块层级**: 应用层 (Application Layer)  
 > **优先级**: P0 (核心必需)  
-> **负责人**: Rainze Dev Team  
+> **依赖模块**: Core (含contracts), State, Animation  
 > **AI辅助**: Claude Opus 4
 
 ---

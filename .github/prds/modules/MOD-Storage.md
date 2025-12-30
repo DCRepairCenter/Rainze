@@ -4,7 +4,7 @@
 > **版本**: v1.0.0
 > **优先级**: P0
 > **依赖**: Core
-> **关联PRD**: [PRD-Rainze.md](../PRD-Rainze.md) 0.4节
+> **关联PRD**: [PRD-Rainze.md](../PRD-Rainze.md) v3.1.0 §0.4
 
 ---
 

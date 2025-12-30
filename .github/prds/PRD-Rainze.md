@@ -1,7 +1,7 @@
 # Rainze - AI桌面宠物 产品需求文档 (PRD)
 
-> **版本**: v3.0.3
-> **日期**: 2025-12-29
+> **版本**: v3.1.0
+> **日期**: 2025-12-30
 > **文档类型**: Interface Flow 结构化需求
 
 ---
@@ -4037,6 +4037,283 @@ v (用户输入/事件触发)
     "enable_parallel_layers": true
   }
 }
+```
+
+---
+
+### 0.15 跨模块契约规范 (Cross-Module Contracts)
+
+> **设计目的**: 统一跨模块的数据结构、接口定义和配置格式，避免各模块各自定义导致的不一致
+> **核心原则**: 单一数据源 (Single Source of Truth)，所有模块引用同一份定义
+
+```
+[Cross-Module Contract System]
+|
+|-- 契约存放位置: src/rainze/core/contracts/
+|    |-- emotion.py      # 情感标签契约
+|    |-- scene.py        # 场景分类契约
+|    |-- interaction.py  # 交互请求/响应契约
+|    |-- observability.py # 可观测性契约
+|    \-- rust_bridge.py  # Rust边界接口契约
+|
+|-- 契约引用规则:
+|    |-- 所有模块必须从 core.contracts 导入公共类型
+|    |-- 禁止在其他模块重复定义相同结构
+|    \-- 契约变更需要同步更新所有引用模块
+```
+
+#### 0.15.1 情感标签契约 (Emotion Contract)
+
+**统一格式**: `[EMOTION:tag:intensity]`
+
+```
+[Emotion Tag Contract]
+|
+|-- 正则模式: \[EMOTION:(\w+):([\d.]+)\]
+|
+|-- 有效标签 (VALID_EMOTION_TAGS):
+|    |-- happy      # 开心
+|    |-- excited    # 兴奋
+|    |-- sad        # 伤心
+|    |-- angry      # 生气
+|    |-- shy        # 害羞
+|    |-- surprised  # 惊讶
+|    |-- tired      # 疲惫
+|    |-- anxious    # 焦虑
+|    \-- neutral    # 中性
+|
+|-- 强度范围: 0.0 - 1.0
+|    |-- 0.0-0.3: 轻微
+|    |-- 0.3-0.6: 中等
+|    |-- 0.6-0.8: 明显
+|    \-- 0.8-1.0: 强烈
+|
+|-- 数据结构 (EmotionTag):
+|    |-- tag: str           # 情感类型
+|    |-- intensity: float   # 强度 [0.0, 1.0]
+|    |-- to_string() -> str # 序列化为标签格式
+|    |-- parse(text) -> Optional[EmotionTag]  # 从文本解析
+|    \-- strip_from_text(text) -> str         # 从文本移除标签
+|
+\-- 使用模块: AI (生成), State (解析), Animation (映射)
+```
+
+#### 0.15.2 场景分类与Tier映射契约 (Scene-Tier Contract)
+
+**中央配置表**: 单一来源，禁止各模块分散定义
+
+```
+[Scene-Tier Mapping Contract]
+|
+|-- 场景类型 (SceneType):
+|    |-- SIMPLE   # 简单交互 (点击/拖拽)
+|    |-- MEDIUM   # 中等复杂度 (整点报时/系统警告)
+|    \-- COMPLEX  # 复杂场景 (自由对话)
+|
+|-- 响应层级 (ResponseTier):
+|    |-- TIER1_TEMPLATE = 1  # 模板响应
+|    |-- TIER2_RULE = 2      # 规则生成
+|    \-- TIER3_LLM = 3       # LLM生成
+|
+|-- 中央映射表 (SCENE_TIER_TABLE):
+|    |-- 场景ID -> SceneTierMapping
+|    |-- 包含: default_tier, allow_override, fallback_chain
+|    \-- 配置: config/scene_tier_mapping.json
+|
+|-- 预定义场景映射:
+|    |-- click:          SIMPLE  -> Tier1, fallback=[]
+|    |-- drag:           SIMPLE  -> Tier1, fallback=[]
+|    |-- hourly_chime:   MEDIUM  -> Tier2, fallback=[Tier1]
+|    |-- system_warning: MEDIUM  -> Tier2, fallback=[Tier1]
+|    |-- game_result:    MEDIUM  -> Tier2, fallback=[Tier1]
+|    |-- feed_response:  MEDIUM  -> Tier2, fallback=[Tier1]
+|    |-- idle_chat:      COMPLEX -> Tier3, fallback=[Tier2, Tier1]
+|    |-- conversation:   COMPLEX -> Tier3, fallback=[Tier2, Tier1]
+|    \-- random_event:   COMPLEX -> Tier3, fallback=[Tier2, Tier1]
+|
+\-- 使用模块: Agent (分类), AI (响应), Features (触发)
+```
+
+**配置文件** (`./config/scene_tier_mapping.json`):
+
+```json
+{
+  "version": "1.0.0",
+  "scenes": {
+    "click": {
+      "scene_type": "SIMPLE",
+      "default_tier": 1,
+      "allow_override": false,
+      "fallback_chain": [],
+      "timeout_ms": 50,
+      "memory_retrieval": false
+    },
+    "hourly_chime": {
+      "scene_type": "MEDIUM",
+      "default_tier": 2,
+      "allow_override": true,
+      "fallback_chain": [1],
+      "timeout_ms": 100,
+      "memory_retrieval": "facts_summary"
+    },
+    "conversation": {
+      "scene_type": "COMPLEX",
+      "default_tier": 3,
+      "allow_override": true,
+      "fallback_chain": [2, 1],
+      "timeout_ms": 3000,
+      "memory_retrieval": "full"
+    }
+  }
+}
+```
+
+#### 0.15.3 统一上下文入口契约 (UCM Entry Contract)
+
+**核心规则**: 所有用户交互必须经过 UCM (Unified Context Manager) 单一入口
+
+```
+[UCM Entry Contract]
+|
+|-- 交互来源 (InteractionSource):
+|    |-- CHAT_INPUT       # 用户聊天输入
+|    |-- PASSIVE_TRIGGER  # 点击/拖拽
+|    |-- SYSTEM_EVENT     # 系统事件 (整点/警告)
+|    |-- TOOL_RESULT      # 工具执行结果
+|    |-- PLUGIN_ACTION    # 插件行为
+|    \-- GAME_INTERACTION # 游戏交互
+|
+|-- 交互请求 (InteractionRequest):
+|    |-- request_id: str      # 唯一请求ID
+|    |-- source: InteractionSource
+|    |-- timestamp: datetime
+|    |-- payload: Dict[str, Any]
+|    \-- trace_id: Optional[str]  # 可观测性追踪
+|
+|-- 交互响应 (InteractionResponse):
+|    |-- request_id: str
+|    |-- success: bool
+|    |-- response_text: Optional[str]
+|    |-- emotion: Optional[EmotionTag]
+|    |-- state_changes: Dict[str, Any]
+|    \-- trace_spans: List[str]
+|
+|-- 入口流程:
+|    |-- EventBus收到事件 -> 路由到UCM
+|    |-- UCM执行场景分类
+|    |-- UCM调度到对应处理器 (AI/Tools/Features)
+|    |-- 处理器返回结果
+|    |-- UCM更新State + Memory
+|    \-- UCM发布响应事件到GUI/Animation
+|
+\-- 禁止: 其他模块绕过UCM直接处理用户交互
+```
+
+#### 0.15.4 Rust/Python边界契约 (Rust Bridge Contract)
+
+**明确划分**: 哪些操作必须走Rust，哪些保留在Python
+
+```
+[Rust-Python Boundary Contract]
+|
+|-- Rust层职责 (必须):
+|    |-- FAISS索引操作 (add/search/remove/save/load)
+|    |-- 向量重排序 (Reranker)
+|    |-- 批量向量化队列管理
+|    |-- CPU/内存监控
+|    |-- 全屏/会议应用检测
+|    \-- 中文分词/实体检测
+|
+|-- Python层职责 (保留):
+|    |-- FTS5全文检索 (SQLite原生)
+|    |-- 记忆重要度评估 (业务规则)
+|    |-- 遗忘策略执行 (业务规则)
+|    |-- LLM API调用
+|    \-- GUI渲染/事件处理
+|
+|-- 接口定义 (Protocol):
+|    |-- IRustMemorySearch: search(), rerank()
+|    |-- IRustSystemMonitor: get_cpu_usage(), get_memory_usage(), is_fullscreen()
+|    |-- IRustTextProcess: tokenize(), detect_entities()
+|    \-- IRustVectorQueue: enqueue(), process_batch()
+|
+|-- 回退策略:
+|    |-- Rust模块加载失败 -> Python回退实现
+|    |-- 回退实现提供相同接口，性能降级可接受
+|    \-- 日志记录回退事件
+|
+\-- 使用模块: Memory, Agent, Features (系统监控)
+```
+
+#### 0.15.5 可观测性契约 (Observability Contract)
+
+**统一追踪**: 所有模块使用相同的Trace/Span格式
+
+```
+[Observability Contract]
+|
+|-- TraceSpan结构:
+|    |-- span_id: str        # 操作唯一ID
+|    |-- trace_id: str       # 请求链路ID
+|    |-- parent_id: Optional[str]
+|    |-- operation: str      # 操作名称
+|    |-- start_time: datetime
+|    |-- end_time: Optional[datetime]
+|    |-- tags: Dict[str, Any]
+|    \-- logs: List[Dict]
+|
+|-- 操作命名规范:
+|    |-- agent.loop.{phase}  # Agent循环阶段
+|    |-- ai.generate         # AI生成
+|    |-- memory.search       # 记忆检索
+|    |-- memory.vectorize    # 向量化
+|    |-- tool.execute.{name} # 工具执行
+|    |-- state.transition    # 状态转换
+|    \-- feature.{id}.handle # 功能处理
+|
+|-- 使用方式:
+|    with Tracer.span("memory.search", {"query": q}) as span:
+|        result = await search(q)
+|        span.log("found", {"count": len(result)})
+|
+\-- 输出: structlog JSON格式 -> ./data/trace_logs/
+```
+
+#### 0.15.6 配置分层契约 (Config Hierarchy Contract)
+
+**配置层次**: 核心配置 -> 服务配置 -> 场景配置 -> 功能配置
+
+```
+[Config Hierarchy Contract]
+|
+|-- 目录结构:
+|    config/
+|    ├── core/                 # 核心配置 (全局共享)
+|    │   ├── api.json         # API超时、重试、限流
+|    │   ├── generation.json  # 生成参数
+|    │   └── observability.json
+|    ├── services/            # 服务配置
+|    │   ├── memory.json
+|    │   ├── state.json
+|    │   └── tools.json
+|    ├── scenes/              # 场景配置
+|    │   └── scene_tier_mapping.json
+|    └── features/            # 功能配置 (继承core)
+|        ├── hourly_chime.json
+|        └── ...
+|
+|-- 继承规则:
+|    |-- 功能配置自动继承core配置
+|    |-- 功能配置可覆盖core默认值
+|    \-- 合并顺序: core -> feature
+|
+|-- 共享Schema:
+|    |-- timeout: {connect_ms, read_ms}
+|    |-- retry: {max_attempts, backoff_ms}
+|    |-- ttl: {cache_seconds, persist_days}
+|    \-- 所有配置引用共享schema定义
+|
+\-- 禁止: 各模块自定义重复的timeout/retry/ttl字段
 ```
 
 ---

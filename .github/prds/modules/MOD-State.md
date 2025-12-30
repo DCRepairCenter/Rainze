@@ -1,9 +1,10 @@
 # MOD-State: 状态管理模块
 
-> **模块版本**: v1.0.0
-> **最后更新**: 2025-12-29
-> **关联PRD**: PRD-Rainze.md v3.0.3 - 0.6a节
+> **模块版本**: v1.1.0
+> **最后更新**: 2025-12-30
+> **关联PRD**: PRD-Rainze.md v3.1.0 - 0.6a, 0.15节
 > **关联技术栈**: TECH-Rainze.md v1.0.1
+> **依赖**: Core (含contracts), Storage
 
 ---
 
@@ -482,19 +483,18 @@ class EmotionStateMachine:
 
 ### 3.3 IntensityParser (情感强度解析器)
 
+> ⚠️ **重要变更 (v1.1.0)**: 
+> - `EmotionTag` 数据结构已移至 `core.contracts.emotion`
+> - IntensityParser 现在返回统一的 `EmotionTag` 类型
+> - 正则模式和有效标签集合统一从 `core.contracts.emotion` 获取
+
 ```python
 """情感强度解析器 - 从LLM输出中提取情感标签"""
 
-import re
-from dataclasses import dataclass
 from typing import Optional
 
-@dataclass
-class ParsedEmotion:
-    """解析后的情感数据"""
-    tag: str
-    intensity: float
-    raw_text: str  # 移除标签后的文本
+# ⭐ 从core.contracts导入统一类型定义
+from rainze.core.contracts.emotion import EmotionTag
 
 class IntensityParser:
     """
@@ -502,16 +502,9 @@ class IntensityParser:
     
     从LLM输出中提取 [EMOTION:tag:intensity] 格式的标签
     支持规则回退推断
+    
+    ⭐ 更新: 使用 core.contracts.emotion.EmotionTag 统一类型
     """
-    
-    # 正则模式
-    EMOTION_PATTERN = re.compile(r"\[EMOTION:(\w+):([\d.]+)\]")
-    
-    # 有效标签
-    VALID_TAGS = {
-        "happy", "excited", "sad", "angry", "shy",
-        "surprised", "tired", "anxious", "neutral"
-    }
     
     def __init__(self, config: "IntensityConfig") -> None:
         """
@@ -522,19 +515,21 @@ class IntensityParser:
         """
         ...
     
-    def parse(self, text: str) -> ParsedEmotion:
+    def parse(self, text: str) -> tuple[Optional[EmotionTag], str]:
         """
         解析文本中的情感标签
+        
+        ⭐ 返回类型更新为 (EmotionTag, stripped_text)
         
         Args:
             text: LLM输出文本
             
         Returns:
-            解析后的情感数据
+            (解析的EmotionTag或None, 移除标签后的文本)
         """
         ...
     
-    def parse_with_fallback(self, text: str) -> ParsedEmotion:
+    def parse_with_fallback(self, text: str) -> tuple[EmotionTag, str]:
         """
         带规则回退的解析
         
@@ -544,11 +539,11 @@ class IntensityParser:
             text: LLM输出文本
             
         Returns:
-            解析后的情感数据
+            (EmotionTag, 移除标签后的文本)
         """
         ...
     
-    def infer_from_rules(self, text: str) -> ParsedEmotion:
+    def infer_from_rules(self, text: str) -> EmotionTag:
         """
         使用规则推断情感
         
@@ -558,7 +553,7 @@ class IntensityParser:
             text: 文本内容
             
         Returns:
-            推断的情感数据
+            推断的EmotionTag
         """
         ...
     

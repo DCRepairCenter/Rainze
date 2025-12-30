@@ -1,0 +1,67 @@
+# Pre-commit hooks configuration
+# 预提交钩子配置
+#
+# Install / 安装:
+#   pre-commit install
+#
+# Run manually / 手动运行:
+#   pre-commit run --all-files
+
+default_language_version:
+  python: python3.12
+
+repos:
+  # Ruff - Python linter and formatter
+  # Ruff - Python 代码检查和格式化
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # MyPy - Static type checking
+  # MyPy - 静态类型检查
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.10
+          - types-toml>=0.10
+
+  # General pre-commit hooks
+  # 通用预提交钩子
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # Conventional commits
+  # 约定式提交检查
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, chore, build, ci]
+
+  # Rust formatting (if rustfmt is installed)
+  # Rust 格式化（需安装 rustfmt）
+  - repo: local
+    hooks:
+      - id: rustfmt
+        name: rustfmt
+        entry: cargo fmt
+        language: system
+        types: [rust]
+        args: ["--manifest-path", "rainze_core/Cargo.toml", "--"]
+        pass_filenames: false

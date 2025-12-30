@@ -3,7 +3,7 @@
 > **模块版本**: v1.0.0
 > **所属层级**: 业务层 (Business Layer)
 > **依赖模块**: MOD-Core, MOD-Storage, MOD-RustCore
-> **关联PRD**: PRD-Rainze.md §0.2, §0.4
+> **关联PRD**: PRD-Rainze.md v3.1.0 §0.2, §0.4
 > **最后更新**: 2025-12-29
 
 ---
@@ -450,12 +450,9 @@ class MemoryManager:
 from enum import Enum
 from typing import Optional, Dict, Any
 
-
-class SceneType(Enum):
-    """场景类型"""
-    SIMPLE = "simple"     # 简单场景：点击、拖拽
-    MEDIUM = "medium"     # 中等场景：整点报时、系统警告
-    COMPLEX = "complex"   # 复杂场景：自由对话
+# ⭐ 从 core.contracts 导入统一类型，禁止本模块重复定义
+from rainze.core.contracts.scene import SceneType
+from rainze.core.observability import Tracer
 
 
 class MemoryCoordinator:

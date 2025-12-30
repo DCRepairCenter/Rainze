@@ -1,12 +1,13 @@
 # MOD-Tools - 工具调用模块
 
-> **模块版本**: v1.0.0
+> **模块版本**: v1.1.0
 > **创建时间**: 2025-12-30
-> **关联PRD**: PRD-Rainze.md v3.0.3 §0.10
+> **最后更新**: 2025-12-30
+> **关联PRD**: PRD-Rainze.md v3.1.0 §0.10, §0.15
 > **关联技术栈**: TECH-Rainze.md v1.0.1
 > **模块层级**: 业务层 (Business Layer)
 > **优先级**: P1 (核心体验)
-> **依赖模块**: Core, AI, State
+> **依赖模块**: Core (含contracts), AI, State
 
 ---
 
@@ -111,6 +112,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum, auto
+
+# ⭐ 从 core.contracts 导入统一类型
+from rainze.core.observability import Tracer
 
 
 class ToolCategory(Enum):

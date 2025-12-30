@@ -1,0 +1,21 @@
+# Rainze Core - Rust 性能模块独立构建配置
+# Separate build configuration for Rust performance module
+
+[build-system]
+requires = ["maturin>=1.8"]
+build-backend = "maturin"
+
+[project]
+name = "rainze_core"
+version = "0.1.0"
+description = "High-performance Rust core for Rainze AI Desktop Pet"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "rainze_core"

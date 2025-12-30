@@ -1,11 +1,11 @@
 # MOD-Agent: Agent自主循环与行为计划模块
 
 > **模块ID**: `rainze.agent`
-> **版本**: v1.0.0
+> **版本**: v1.1.0
 > **优先级**: P1 (Core Experience)
 > **层级**: Business Layer
-> **依赖**: Core, AI, Memory, State, RustCore
-> **关联PRD**: PRD-Rainze.md §0.5a, §0.7, §0.8
+> **依赖**: Core (含contracts), AI, Memory, State, RustCore
+> **关联PRD**: PRD-Rainze.md §0.5a, §0.7, §0.8, §0.15
 
 ---
 
@@ -78,9 +78,18 @@ src/rainze/agent/
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Dict, Any, Callable, Awaitable
-from enum import Enum, auto
 from dataclasses import dataclass, field
 from datetime import datetime
+
+# ⭐ 从core.contracts导入统一类型定义
+from rainze.core.contracts.scene import SceneType, ResponseTier, get_scene_tier_table
+from rainze.core.contracts.interaction import (
+    InteractionSource,
+    InteractionRequest,
+    InteractionResponse
+)
+from rainze.core.contracts.emotion import EmotionTag
+from rainze.core.observability import Tracer
 
 if TYPE_CHECKING:
     from rainze.ai import ResponseResult
@@ -88,32 +97,23 @@ if TYPE_CHECKING:
     from rainze.state import StateManager
 
 
-class InteractionType(Enum):
-    """交互类型枚举"""
-    CONVERSATION = auto()       # 用户主动对话
-    GAME_INTERACTION = auto()   # 游戏内交互
-    TOOL_EXECUTION = auto()     # 工具执行
-    PLUGIN_ACTION = auto()      # 插件行为
-    SYSTEM_EVENT = auto()       # 系统事件
-    PASSIVE_TRIGGER = auto()    # 被动触发 (点击/拖拽)
-    PROACTIVE = auto()          # 主动行为
-
-
-class SceneType(Enum):
-    """场景复杂度分类"""
-    SIMPLE = auto()     # 简单场景 -> Tier1 模板
-    MEDIUM = auto()     # 中等场景 -> Tier2 规则
-    COMPLEX = auto()    # 复杂场景 -> Tier3 LLM
+# ⚠️ InteractionType 已移至 core.contracts.interaction.InteractionSource
+# 此处保留别名以兼容
+InteractionType = InteractionSource
 
 
 @dataclass
 class InteractionContext:
-    """交互上下文数据类"""
+    """交互上下文数据类
+    
+    ⭐ 更新: 使用统一的SceneType和EmotionTag
+    """
     interaction_id: str
-    interaction_type: InteractionType
-    scene_type: SceneType
+    interaction_type: InteractionSource  # 使用统一类型
+    scene_type: SceneType                # 使用统一类型
     timestamp: datetime
     source: str                          # 来源标识
+    trace_id: Optional[str] = None       # ⭐新增: 可观测性追踪
     user_input: Optional[str] = None     # 用户输入
     event_data: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -127,14 +127,17 @@ class InteractionContext:
 
 @dataclass
 class InteractionResult:
-    """交互结果数据类"""
+    """交互结果数据类
+    
+    ⭐ 更新: 使用统一的EmotionTag
+    """
     success: bool
     response_text: Optional[str] = None
-    emotion_tag: Optional[str] = None
-    emotion_intensity: float = 0.5
+    emotion: Optional[EmotionTag] = None  # 使用统一类型
     action_hint: Optional[str] = None
     state_changes: Dict[str, Any] = field(default_factory=dict)
     memory_written: bool = False
+    trace_spans: list[str] = field(default_factory=list)  # ⭐新增
     error: Optional[str] = None
 
 
@@ -142,17 +145,22 @@ class UnifiedContextManager:
     """
     统一上下文管理器 (UCM)
     
-    所有用户交互的单一入口点，确保：
+    ⭐ 核心设计: 所有用户交互的**唯一入口点**
+    
+    确保：
     - 状态一致性：任何模块的状态变化都实时同步
     - 记忆完整性：游戏/插件/工具产生的交互同样写入记忆
     - 上下文共享：所有模块共享同一套用户画像和情绪状态
+    - 可观测性：每个交互自动生成trace_id并记录span
+    
+    ⚠️ 禁止其他模块绕过UCM直接处理用户交互！
     
     Attributes:
         _memory_manager: 记忆管理器引用
         _state_manager: 状态管理器引用
-        _scene_classifier: 场景分类器
+        _scene_classifier: 场景分类器 (从AI模块获取)
         _intent_recognizer: 意图识别器
-        _response_generator: 响应生成器
+        _tier_table: 场景-Tier映射表 (从core.contracts加载)
         _handlers: 交互类型处理器映射
     """
     
@@ -160,8 +168,8 @@ class UnifiedContextManager:
         self,
         memory_manager: MemoryManager,
         state_manager: StateManager,
-        scene_classifier: SceneClassifier,
-        intent_recognizer: IntentRecognizer,
+        scene_classifier: "SceneClassifier",  # 从AI模块导入
+        intent_recognizer: "IntentRecognizer",
     ) -> None:
         """
         初始化统一上下文管理器。
@@ -176,37 +184,70 @@ class UnifiedContextManager:
     
     async def process_interaction(
         self,
-        interaction_type: InteractionType,
-        source: str,
-        user_input: Optional[str] = None,
-        event_data: Optional[Dict[str, Any]] = None,
-    ) -> InteractionResult:
+        request: InteractionRequest
+    ) -> InteractionResponse:
         """
         处理交互的统一入口。
         
-        所有类型的交互（对话、游戏、工具、插件、系统事件）
+        ⭐ 所有类型的交互（对话、游戏、工具、插件、系统事件）
         都必须通过此方法处理，确保状态和记忆的一致性。
         
         Args:
-            interaction_type: 交互类型
-            source: 来源标识（如 "chat_input", "rps_game", "focus_timer"）
-            user_input: 用户输入文本（对话类型时必需）
-            event_data: 事件附加数据
+            request: 统一交互请求 (从core.contracts导入)
             
         Returns:
-            InteractionResult: 包含响应文本、情感标签、状态变化等
+            InteractionResponse: 统一响应格式
             
         Raises:
             InteractionError: 交互处理失败时抛出
             
         Example:
-            >>> result = await ucm.process_interaction(
-            ...     InteractionType.CONVERSATION,
-            ...     source="chat_input",
-            ...     user_input="今天天气怎么样？"
+            >>> request = InteractionRequest(
+            ...     request_id=uuid4().hex,
+            ...     source=InteractionSource.CHAT_INPUT,
+            ...     timestamp=datetime.now(),
+            ...     payload={"text": "今天天气怎么样？"}
             ... )
-            >>> print(result.response_text)
+            >>> response = await ucm.process_interaction(request)
+            >>> print(response.response_text)
         """
+        with Tracer.span("ucm.process", {"source": request.source.name}) as span:
+            # 1. 场景分类
+            scene = await self._classify_scene(request)
+            span.log("classified", {"scene": scene.scene_id})
+            
+            # 2. 获取Tier和降级链
+            tier = scene.suggested_tier
+            fallback_chain = scene.mapping.fallback_chain
+            
+            # 3. 路由到处理器
+            result = await self._route_to_handler(request, scene, tier)
+            
+            # 4. 更新状态和记忆
+            await self._post_process(request, result)
+            
+            return result
+    
+    # 保留旧接口以兼容
+    async def process_interaction_legacy(
+        self,
+        interaction_type: InteractionSource,
+        source: str,
+        user_input: Optional[str] = None,
+        event_data: Optional[Dict[str, Any]] = None,
+    ) -> InteractionResult:
+        """
+        [兼容接口] 处理交互的旧入口。
+        
+        ⚠️ 已废弃，请使用 process_interaction(InteractionRequest)
+        """
+        ...
+    
+    async def _classify_scene(
+        self, 
+        request: InteractionRequest
+    ) -> "ClassifiedScene":
+        """分类场景并获取Tier配置"""
         ...
     
     async def _build_context(

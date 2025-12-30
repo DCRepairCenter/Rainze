@@ -1,12 +1,13 @@
 # MOD-Features-Basic - 基础功能模块
 
-> **模块版本**: v1.0.0
+> **模块版本**: v1.1.0
 > **创建时间**: 2025-12-29
-> **关联PRD**: PRD-Rainze.md v3.0.3 第一部分
+> **最后更新**: 2025-12-30
+> **关联PRD**: PRD-Rainze.md v3.1.0 第一部分, §0.15
 > **关联技术栈**: TECH-Rainze.md v1.0.1
 > **模块层级**: 功能层 (Feature Layer)
 > **优先级**: P1 (核心体验)
-> **依赖模块**: Core, State, AI, GUI, Agent
+> **依赖模块**: Core (含contracts), State, AI, GUI, Agent
 
 ---
 
@@ -18,35 +19,36 @@
 
 ### 1.2 功能清单
 
-| 编号 | 功能 | PRD章节 | 子模块 | 优先级 |
-|------|------|---------|--------|--------|
-| 1 | 聊天记录监控与回溯 | §1 | chat_history | P1 |
-| 2 | 动态使用说明书 | §2 | help_system | P2 |
-| 3 | 核心人设即时修改 | §3 | persona_editor | P1 |
-| 4 | 个人档案注入 | §4 | user_profile | P1 |
-| 5 | 整点报时与提醒 | §5 | hourly_chime | P1 |
-| 6 | 专注时钟与监督 | §6 | focus_timer | P2 |
-| 7 | 喂食与背包系统 | §7 | inventory | P1 |
-| 8 | 好感度数值体系 | §8 | affinity | P1 |
-| 9 | 日程提醒助手 | §9 | scheduler | P2 |
-| 10 | 随机事件小剧场 | §10 | random_events | P2 |
-| 11 | 闲聊陪伴模式 | §11 | idle_chat | P2 |
-| 12 | 基础物理与交互 | §12 | physics | P1 |
-| 13 | 系统状态感知 | §13 | system_monitor | P1 |
-| 14 | 剪贴板互动 | §14 | clipboard | P3 |
-| 15 | 昼夜作息系统 | §15 | sleep_system | P2 |
-| 16 | 程序快速启动器 | §16 | launcher | P2 |
-| 17 | 网站快捷访问 | §17 | bookmarks | P2 |
-| 18 | 猜拳与掷骰子 | §18 | minigames | P2 |
-| 19 | 本地文件整理 | §19 | file_organizer | P3 |
-| 20 | 商城与经济系统 | §20 | economy | P2 |
-| 21 | 网络延迟感知 | §21 | network_monitor | P3 |
-| 22 | 游戏模式侦测 | §22 | gaming_mode | P2 |
-| 24 | 随手记/便签条 | §24 | quick_notes | P2 |
-| 25 | 本地天气感知 | §25 | weather | P2 |
-| 26 | 彩蛋与隐藏指令 | §26 | easter_eggs | P3 |
+| 编号 | 功能 | PRD章节 | 子模块 | 优先级 | 场景类型 |
+|------|------|---------|--------|--------|----------|
+| 1 | 聊天记录监控与回溯 | §1 | chat_history | P1 | - |
+| 2 | 动态使用说明书 | §2 | help_system | P2 | - |
+| 3 | 核心人设即时修改 | §3 | persona_editor | P1 | - |
+| 4 | 个人档案注入 | §4 | user_profile | P1 | - |
+| 5 | 整点报时与提醒 | §5 | hourly_chime | P1 | MEDIUM |
+| 6 | 专注时钟与监督 | §6 | focus_timer | P2 | MEDIUM |
+| 7 | 喂食与背包系统 | §7 | inventory | P1 | MEDIUM |
+| 8 | 好感度数值体系 | §8 | affinity | P1 | - |
+| 9 | 日程提醒助手 | §9 | scheduler | P2 | MEDIUM |
+| 10 | 随机事件小剧场 | §10 | random_events | P2 | COMPLEX |
+| 11 | 闲聊陪伴模式 | §11 | idle_chat | P2 | COMPLEX |
+| 12 | 基础物理与交互 | §12 | physics | P1 | SIMPLE |
+| 13 | 系统状态感知 | §13 | system_monitor | P1 | MEDIUM |
+| 14 | 剪贴板互动 | §14 | clipboard | P3 | MEDIUM |
+| 15 | 昼夜作息系统 | §15 | sleep_system | P2 | - |
+| 16 | 程序快速启动器 | §16 | launcher | P2 | - |
+| 17 | 网站快捷访问 | §17 | bookmarks | P2 | - |
+| 18 | 猜拳与掷骰子 | §18 | minigames | P2 | MEDIUM |
+| 19 | 本地文件整理 | §19 | file_organizer | P3 | - |
+| 20 | 商城与经济系统 | §20 | economy | P2 | - |
+| 21 | 网络延迟感知 | §21 | network_monitor | P3 | MEDIUM |
+| 22 | 游戏模式侦测 | §22 | gaming_mode | P2 | - |
+| 24 | 随手记/便签条 | §24 | quick_notes | P2 | - |
+| 25 | 本地天气感知 | §25 | weather | P2 | MEDIUM |
+| 26 | 彩蛋与隐藏指令 | §26 | easter_eggs | P3 | - |
 
 > **注**: §23 情绪状态机系统属于 MOD-State.md 模块，不在本模块范围内
+> **场景类型**: 参考 PRD §0.15.2 场景-Tier映射契约
 
 ---
 
@@ -55,6 +57,8 @@
 ```
 src/rainze/features/
 ├── __init__.py
+├── base.py                     # ⭐新增: BaseFeature基类
+├── registry.py                 # ⭐新增: 功能注册表
 ├── basic/                      # 基础功能 (§1-§13)
 │   ├── __init__.py
 │   ├── chat_history.py         # §1 聊天记录
@@ -92,6 +96,182 @@ src/rainze/features/
     ├── note.py                 # 便签数据模型
     ├── shop.py                 # 商城数据模型
     └── game_result.py          # 游戏结果模型
+```
+
+---
+
+## 2.5 统一功能接口 ⭐新增
+
+> **参考**: PRD §0.15.3 UCM入口契约
+
+### 2.5.1 BaseFeature - 功能基类
+
+```python
+# src/rainze/features/base.py
+
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Dict, Any, List, Optional
+from dataclasses import dataclass
+
+# 从core.contracts导入统一类型
+from rainze.core.contracts.scene import SceneType
+from rainze.core.contracts.interaction import InteractionRequest, InteractionResponse
+from rainze.core.contracts.emotion import EmotionTag
+from rainze.core.observability import Tracer
+
+if TYPE_CHECKING:
+    from rainze.state import StateManager
+    from rainze.agent import InteractionContext
+
+@dataclass
+class FeatureResult:
+    """功能处理结果"""
+    success: bool
+    response_text: Optional[str] = None
+    emotion: Optional[EmotionTag] = None
+    state_changes: Dict[str, Any] = None
+    animation_trigger: Optional[str] = None
+    sound_effect: Optional[str] = None
+
+
+class BaseFeature(ABC):
+    """功能模块基类
+    
+    所有基础功能必须继承此类，确保统一的接口和契约。
+    
+    ⚠️ 注意: 功能模块不应直接处理用户交互，
+    必须通过UCM (UnifiedContextManager) 调度。
+    """
+    
+    @property
+    @abstractmethod
+    def feature_id(self) -> str:
+        """功能ID
+        
+        唯一标识符，用于注册和路由。
+        示例: "hourly_chime", "focus_timer", "minigame_rps"
+        """
+        ...
+    
+    @property
+    @abstractmethod
+    def scene_type(self) -> Optional[SceneType]:
+        """默认场景类型
+        
+        用于场景分类器判断。
+        返回None表示此功能不触发响应生成。
+        """
+        ...
+    
+    @property
+    def default_tier(self) -> Optional[int]:
+        """默认响应Tier
+        
+        可被配置文件覆盖。返回None使用场景默认值。
+        """
+        return None
+    
+    @abstractmethod
+    async def handle(
+        self,
+        context: "InteractionContext",
+        event_data: Dict[str, Any]
+    ) -> FeatureResult:
+        """处理功能逻辑
+        
+        由UCM调用，不应直接被外部调用。
+        
+        Args:
+            context: 交互上下文（含状态快照、记忆等）
+            event_data: 事件特定数据
+            
+        Returns:
+            FeatureResult: 处理结果
+        """
+        with Tracer.span(f"feature.{self.feature_id}.handle") as span:
+            # 子类实现
+            ...
+    
+    def get_state_dependencies(self) -> List[str]:
+        """声明依赖的状态字段
+        
+        Returns:
+            状态字段列表，如 ["energy", "mood", "affinity"]
+        """
+        return []
+    
+    def get_animation_triggers(self) -> Dict[str, str]:
+        """声明可触发的动画映射
+        
+        Returns:
+            事件名到动画名的映射
+            示例: {"complete": "celebrate", "warning": "alert"}
+        """
+        return {}
+    
+    def get_config_schema(self) -> Optional[Dict[str, Any]]:
+        """获取配置Schema (JSON Schema格式)
+        
+        用于配置验证。返回None表示无额外配置。
+        """
+        return None
+```
+
+### 2.5.2 FeatureRegistry - 功能注册表
+
+```python
+# src/rainze/features/registry.py
+
+from typing import Dict, Type, Optional
+
+class FeatureRegistry:
+    """功能注册表
+    
+    统一管理所有功能模块的注册和获取。
+    """
+    
+    _features: Dict[str, "BaseFeature"] = {}
+    
+    @classmethod
+    def register(cls, feature: "BaseFeature") -> None:
+        """注册功能
+        
+        Args:
+            feature: 功能实例
+            
+        Raises:
+            ValueError: 功能ID重复
+        """
+        ...
+    
+    @classmethod
+    def get(cls, feature_id: str) -> Optional["BaseFeature"]:
+        """获取功能
+        
+        Args:
+            feature_id: 功能ID
+            
+        Returns:
+            功能实例，不存在返回None
+        """
+        ...
+    
+    @classmethod
+    def get_by_scene(cls, scene_id: str) -> list["BaseFeature"]:
+        """根据场景ID获取功能列表
+        
+        Args:
+            scene_id: 场景ID
+            
+        Returns:
+            匹配的功能列表
+        """
+        ...
+    
+    @classmethod
+    def all_features(cls) -> Dict[str, "BaseFeature"]:
+        """获取所有已注册功能"""
+        ...
 ```
 
 ---

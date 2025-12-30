@@ -1,12 +1,13 @@
 # MOD-Plugins - 插件系统模块
 
-> **模块版本**: v1.0.0
+> **模块版本**: v1.1.0
 > **创建时间**: 2025-12-29
-> **关联PRD**: PRD-Rainze.md v3.0.3 第三部分
+> **最后更新**: 2025-12-30
+> **关联PRD**: PRD-Rainze.md v3.1.0 第三部分, §0.15
 > **关联技术栈**: TECH-Rainze.md v1.0.1
 > **模块层级**: 应用层 (Application Layer)
 > **优先级**: P2 (扩展能力)
-> **依赖模块**: Core, AI, State, Tools
+> **依赖模块**: Core (含contracts), AI, State, Tools
 
 ---
 
@@ -22,15 +23,30 @@
 | **依赖模块** | Core (事件总线)、AI (调用能力)、State (状态访问)、Tools (工具扩展) |
 | **被依赖于** | 第三方插件、游戏插件、集成插件 |
 
-### 1.2 插件类型定义
+### 1.2 插件类型与默认权限 ⭐更新
 
-| 类型 | 标识 | 用途 | 示例 |
-|------|------|------|------|
-| game | `game` | 小游戏插件 | 猜拳、骰子、卡牌 |
-| tool | `tool` | 工具插件 | 文件整理、翻译 |
-| effect | `effect` | 特效插件 | 天气效果、节日特效 |
-| integration | `integration` | 集成插件 | 音乐嗅探、日历同步 |
-| custom | `custom` | 自定义插件 | 用户自定义功能 |
+| 类型 | 标识 | 用途 | 默认权限 |
+|------|------|------|----------|
+| game | `game` | 小游戏插件 | BASIC + WRITE_STATE |
+| tool | `tool` | 工具插件 | STANDARD |
+| effect | `effect` | 特效插件 | BASIC |
+| integration | `integration` | 集成插件 | ADVANCED |
+| custom | `custom` | 自定义插件 | BASIC |
+
+### 1.3 插件与Tools/Features边界 ⭐新增
+
+> **参考**: PRD §0.15 跨模块契约
+
+| 能力 | Tools (内置) | Features (内置) | Plugins (扩展) |
+|------|--------------|-----------------|----------------|
+| 系统提醒 | ✅ 直接调用 | - | ❌ 需通过 `api.request_tool()` |
+| 启动应用 | ✅ 直接调用 | - | ❌ 需通过 `api.request_tool()` |
+| 读取状态 | - | ✅ 直接访问 | 通过 `api.get_state()` |
+| 写入状态 | - | ✅ 直接访问 | 通过 `api.set_state()` + 权限检查 |
+| 显示UI | - | ✅ 直接调用GUI | 通过 `api.show_bubble()` |
+| 注册新工具 | ❌ | ❌ | ✅ `api.register_tool()` |
+
+**⚠️ 禁止**: 插件直接操作内部服务，必须通过PluginAPI
 
 ### 1.3 PRD映射
 
@@ -102,6 +118,9 @@ from typing import TYPE_CHECKING, Optional, Dict, List, Callable, Any
 from pathlib import Path
 from enum import Enum, auto
 from dataclasses import dataclass, field
+
+# ⭐ 从 core.contracts 导入统一类型
+from rainze.core.observability import Tracer
 
 if TYPE_CHECKING:
     from rainze.core import EventBus, ConfigManager
@@ -868,127 +887,176 @@ class PluginBase(ABC):
         return None
 
 
-### 3.4 PermissionManager - 权限管理
+### 3.4 PermissionManager - 权限管理 ⭐增强
+
+> **参考**: PRD §0.15 跨模块契约
 
 ```python
 """权限管理
 
 管理插件权限的检查和授权。
+
+⭐ v1.1.0更新: 新增权限标志组合和资源限制
 """
 
 from typing import Dict, List, Set, Optional
-from enum import Enum, auto
-from dataclasses import dataclass
+from enum import Flag, auto
+from dataclasses import dataclass, field
 
 
-class PermissionLevel(Enum):
-    """权限级别"""
-    NONE = auto()           # 无权限
-    READ = auto()           # 只读
-    WRITE = auto()          # 读写
-    ADMIN = auto()          # 管理员
+class PluginPermission(Flag):
+    """插件权限标志 ⭐新增: 使用Flag支持权限组合"""
+    NONE = 0
+    
+    # 基础权限
+    READ_STATE = auto()        # 读取状态
+    WRITE_STATE = auto()       # 写入状态（需审批）
+    
+    # UI权限
+    SHOW_BUBBLE = auto()       # 显示气泡
+    SHOW_DIALOG = auto()       # 显示对话框
+    ADD_MENU = auto()          # 添加菜单项
+    
+    # 系统权限
+    EXECUTE_TOOL = auto()      # 调用工具（受限）
+    NETWORK_ACCESS = auto()    # 网络访问
+    FILE_READ = auto()         # 文件读取（沙箱内）
+    FILE_WRITE = auto()        # 文件写入（需审批）
+    
+    # 高级权限
+    SUBSCRIBE_EVENTS = auto()  # 订阅事件
+    EMIT_EVENTS = auto()       # 发射事件
+    REGISTER_TOOL = auto()     # 注册新工具
+    
+    # 组合权限快捷方式
+    BASIC = READ_STATE | SHOW_BUBBLE
+    STANDARD = BASIC | SHOW_DIALOG | EXECUTE_TOOL | SUBSCRIBE_EVENTS
+    ADVANCED = STANDARD | WRITE_STATE | NETWORK_ACCESS | EMIT_EVENTS
+
+
+# 按插件类型的默认权限
+DEFAULT_PERMISSIONS_BY_TYPE: Dict[str, PluginPermission] = {
+    "game": PluginPermission.BASIC | PluginPermission.WRITE_STATE,  # 游戏需要更新金币
+    "tool": PluginPermission.STANDARD,
+    "effect": PluginPermission.BASIC,
+    "integration": PluginPermission.ADVANCED,
+    "custom": PluginPermission.BASIC,
+}
 
 
 @dataclass
-class Permission:
-    """权限定义"""
-    name: str               # 权限名称，如 "economy.write"
-    level: PermissionLevel
-    description: str
-    dangerous: bool = False # 是否为危险权限
-    requires_confirm: bool = False  # 是否需要用户确认
+class ResourceLimits:
+    """插件资源限制 ⭐新增"""
+    max_memory_mb: int = 50
+    max_cpu_percent: float = 10.0
+    max_execution_time_ms: int = 5000
+    max_api_calls_per_minute: int = 30
+    max_file_size_kb: int = 1024
+    allowed_file_extensions: Set[str] = field(
+        default_factory=lambda: {".json", ".txt", ".png", ".gif"}
+    )
 
 
-# 预定义权限列表
-BUILTIN_PERMISSIONS: Dict[str, Permission] = {
-    "pet.read": Permission("pet.read", PermissionLevel.READ, "读取宠物状态"),
-    "pet.write": Permission("pet.write", PermissionLevel.WRITE, "控制宠物行为"),
-    "economy.read": Permission("economy.read", PermissionLevel.READ, "读取金币数量"),
-    "economy.write": Permission("economy.write", PermissionLevel.WRITE, "修改金币数量"),
-    "affinity.read": Permission("affinity.read", PermissionLevel.READ, "读取好感度"),
-    "affinity.write": Permission("affinity.write", PermissionLevel.WRITE, "修改好感度"),
-    "ui.dialog": Permission("ui.dialog", PermissionLevel.WRITE, "显示对话框"),
-    "ui.menu": Permission("ui.menu", PermissionLevel.WRITE, "添加菜单项"),
-    "ui.notification": Permission("ui.notification", PermissionLevel.WRITE, "显示通知"),
-    "storage.read": Permission("storage.read", PermissionLevel.READ, "读取插件存储"),
-    "storage.write": Permission("storage.write", PermissionLevel.WRITE, "写入插件存储"),
-    "events.subscribe": Permission("events.subscribe", PermissionLevel.READ, "订阅事件"),
-    "events.emit": Permission("events.emit", PermissionLevel.WRITE, "发射事件"),
-    "system.read": Permission("system.read", PermissionLevel.READ, "读取系统信息"),
-    "system.write": Permission("system.write", PermissionLevel.ADMIN, "系统操作", dangerous=True, requires_confirm=True),
-    "file.read": Permission("file.read", PermissionLevel.READ, "读取文件", dangerous=True),
-    "file.write": Permission("file.write", PermissionLevel.ADMIN, "写入文件", dangerous=True, requires_confirm=True),
-    "network": Permission("network", PermissionLevel.WRITE, "网络访问", dangerous=True, requires_confirm=True),
+# 按插件类型的默认资源限制
+DEFAULT_LIMITS_BY_TYPE: Dict[str, ResourceLimits] = {
+    "game": ResourceLimits(max_memory_mb=30, max_execution_time_ms=3000),
+    "tool": ResourceLimits(max_memory_mb=50, max_execution_time_ms=10000),
+    "effect": ResourceLimits(max_memory_mb=20, max_execution_time_ms=1000),
+    "integration": ResourceLimits(max_memory_mb=100, max_api_calls_per_minute=60),
+    "custom": ResourceLimits(),  # 默认限制
 }
 
 
 class PermissionManager:
     """权限管理器
     
+    ⭐ v1.1.0更新: 支持权限标志组合和资源限制检查
+    
     Attributes:
-        _granted: 已授权权限 {plugin_id: set(permissions)}
-        _denied: 已拒绝权限 {plugin_id: set(permissions)}
+        _granted: 已授权权限 {plugin_id: PluginPermission}
+        _limits: 资源限制 {plugin_id: ResourceLimits}
+        _usage: 使用统计 {plugin_id: UsageStats}
     """
     
     def __init__(self) -> None:
         """初始化权限管理器"""
         ...
     
-    def check_permission(self, plugin_id: str, permission: str) -> bool:
+    def check_permission(
+        self, 
+        plugin_id: str, 
+        permission: PluginPermission
+    ) -> bool:
         """检查插件是否有指定权限
         
         Args:
             plugin_id: 插件ID
-            permission: 权限名称
+            permission: 权限标志
             
         Returns:
             是否有权限
         """
         ...
     
-    def grant_permission(self, plugin_id: str, permission: str) -> bool:
-        """授予权限
+    def grant_permissions(
+        self, 
+        plugin_id: str, 
+        permissions: PluginPermission,
+        limits: Optional[ResourceLimits] = None
+    ) -> None:
+        """授予权限和设置资源限制
         
         Args:
             plugin_id: 插件ID
-            permission: 权限名称
-            
-        Returns:
-            是否成功授予
+            permissions: 权限标志组合
+            limits: 资源限制（可选）
         """
         ...
     
-    def revoke_permission(self, plugin_id: str, permission: str) -> bool:
-        """撤销权限
+    def get_default_permissions(self, plugin_type: str) -> PluginPermission:
+        """根据插件类型获取默认权限
+        
+        Args:
+            plugin_type: 插件类型 (game/tool/effect/integration/custom)
+            
+        Returns:
+            默认权限标志
+        """
+        return DEFAULT_PERMISSIONS_BY_TYPE.get(plugin_type, PluginPermission.BASIC)
+    
+    def check_resource_limit(
+        self, 
+        plugin_id: str, 
+        resource: str, 
+        value: float
+    ) -> bool:
+        """检查资源使用是否超限
         
         Args:
             plugin_id: 插件ID
-            permission: 权限名称
+            resource: 资源类型 (memory/cpu/time/api_calls)
+            value: 当前值
             
         Returns:
-            是否成功撤销
+            是否在限制内
         """
         ...
     
-    def get_granted_permissions(self, plugin_id: str) -> Set[str]:
-        """获取插件已授权的权限
+    def require_dangerous_confirm(
+        self,
+        plugin_id: str,
+        permissions: PluginPermission
+    ) -> List[str]:
+        """检查哪些权限需要用户确认
+        
+        危险权限: WRITE_STATE, FILE_WRITE, NETWORK_ACCESS, REGISTER_TOOL
         
         Args:
             plugin_id: 插件ID
+            permissions: 请求的权限
             
         Returns:
-            权限集合
-        """
-        ...
-    
-    def get_required_permissions(self, manifest: Dict) -> List[str]:
-        """从清单中提取所需权限
-        
-        Args:
-            manifest: plugin.json内容
-            
-        Returns:
-            权限列表
+            需要确认的权限名称列表
         """
         ...
     

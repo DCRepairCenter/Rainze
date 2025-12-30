@@ -1,10 +1,10 @@
 # MOD-AI: AI服务层模块
 
 > **模块ID**: `rainze.ai`
-> **版本**: v1.0.0
+> **版本**: v1.1.0
 > **优先级**: P0
-> **依赖**: Core, Storage, RustCore
-> **关联PRD**: [PRD-Rainze.md](../PRD-Rainze.md) 0.3, 0.5, 0.5b, 0.5c, 0.6节
+> **依赖**: Core (含contracts), Storage, RustCore
+> **关联PRD**: [PRD-Rainze.md](../PRD-Rainze.md) v3.1.0 §0.3, §0.5, §0.5b, §0.5c, §0.6, §0.15
 
 ---
 
@@ -421,18 +421,16 @@ from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
-class ResponseTier(Enum):
-    """响应层级。"""
-    TIER1_TEMPLATE = 1    # 模板响应
-    TIER2_RULE = 2        # 规则生成
-    TIER3_LLM = 3         # LLM生成
+# ⭐ 从 core.contracts 导入统一类型，禁止本模块重复定义
+from rainze.core.contracts.scene import ResponseTier
+from rainze.core.contracts.emotion import EmotionTag
+from rainze.core.observability import Tracer
 
 @dataclass
 class GeneratedResponse:
     """生成的响应。"""
     text: str
-    emotion_tag: Optional[str] = None
-    emotion_intensity: float = 0.5
+    emotion_tag: Optional[EmotionTag] = None  # 使用统一类型
     action_hint: Optional[str] = None
     tier_used: ResponseTier = ResponseTier.TIER3_LLM
     latency_ms: float = 0
@@ -701,64 +699,63 @@ class FallbackManager:
 
 ### 3.6 SceneClassifier (场景分类器)
 
+> ⚠️ **重要变更 (v1.1.0)**: 
+> - `SceneType` 和 `ResponseTier` 枚举已移至 `core.contracts.scene`
+> - SceneClassifier 现在仅负责**调用**分类逻辑，不再定义类型
+> - 场景-Tier映射表统一从配置文件加载
+
 ```python
 # src/rainze/ai/scene/classifier.py
 
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
-from enum import Enum
 
-class SceneComplexity(Enum):
-    """场景复杂度。"""
-    SIMPLE = "simple"     # → Tier 1
-    MEDIUM = "medium"     # → Tier 2
-    COMPLEX = "complex"   # → Tier 3
+# ⭐ 从core.contracts导入统一类型定义
+from rainze.core.contracts.scene import (
+    SceneType, 
+    ResponseTier,
+    SceneTierMapping,
+    get_scene_tier_table
+)
 
 @dataclass
 class ClassifiedScene:
-    """分类后的场景。"""
-    scene_type: str
-    complexity: SceneComplexity
-    suggested_tier: int
+    """分类后的场景。
+    
+    Attributes:
+        scene_id: 场景ID (如 "click", "conversation")
+        scene_type: 场景类型 (从core.contracts导入)
+        suggested_tier: 建议响应层级
+        mapping: 完整映射配置
+        context: 事件上下文
+        requires_memory: 是否需要记忆检索
+        requires_emotion: 是否需要情感分析
+    """
+    scene_id: str
+    scene_type: SceneType
+    suggested_tier: ResponseTier
+    mapping: SceneTierMapping
     context: Dict[str, Any]
     requires_memory: bool = False
-    requires_emotion_analysis: bool = False
+    requires_emotion: bool = False
 
 class SceneClassifier:
     """
     场景分类器。
     
-    在调用LLM前判断场景复杂度，
-    决定使用哪个响应Tier。
+    在调用LLM前判断场景复杂度，决定使用哪个响应Tier。
+    
+    ⚠️ 注意: 不再自定义场景规则，统一从中央配置表获取。
     
     Attributes:
-        rules: 分类规则配置
+        _tier_table: 场景-Tier映射表 (从配置加载)
     """
     
-    # 场景分类规则
-    SCENE_RULES = {
-        # SIMPLE场景 → Tier 1
-        "click": SceneComplexity.SIMPLE,
-        "drag": SceneComplexity.SIMPLE,
-        "hover": SceneComplexity.SIMPLE,
-        "release": SceneComplexity.SIMPLE,
-        "ui_feedback": SceneComplexity.SIMPLE,
+    def __init__(self) -> None:
+        """初始化场景分类器。
         
-        # MEDIUM场景 → Tier 2
-        "hourly_chime": SceneComplexity.MEDIUM,
-        "system_warning": SceneComplexity.MEDIUM,
-        "focus_warning": SceneComplexity.MEDIUM,
-        "weather_update": SceneComplexity.MEDIUM,
-        
-        # COMPLEX场景 → Tier 3
-        "conversation": SceneComplexity.COMPLEX,
-        "idle_chat": SceneComplexity.COMPLEX,
-        "random_event": SceneComplexity.COMPLEX,
-        "feed_response": SceneComplexity.COMPLEX,
-    }
-    
-    def __init__(self, custom_rules: Optional[Dict] = None) -> None:
-        """初始化场景分类器。"""
+        从 config/scene_tier_mapping.json 加载映射表。
+        """
         ...
     
     def classify(
@@ -770,23 +767,43 @@ class SceneClassifier:
         分类场景。
         
         Args:
-            event_type: 事件类型
+            event_type: 事件类型 (如 "click", "conversation")
             context: 事件上下文
             
         Returns:
             分类结果
+            
+        Raises:
+            UnknownSceneError: 未知场景类型
         """
         ...
     
-    def _check_memory_required(
+    def get_fallback_chain(self, scene_id: str) -> list[ResponseTier]:
+        """获取场景的降级链。
+        
+        Args:
+            scene_id: 场景ID
+            
+        Returns:
+            降级Tier列表
+        """
+        ...
+    
+    def _determine_memory_level(
         self, 
+        mapping: SceneTierMapping,
         context: Dict[str, Any]
-    ) -> bool:
-        """检查是否需要记忆检索。"""
+    ) -> str:
+        """确定记忆检索级别。
+        
+        Returns:
+            "none" | "facts_summary" | "full"
+        """
         ...
     
     def _check_emotion_required(
-        self, 
+        self,
+        scene_type: SceneType,
         context: Dict[str, Any]
     ) -> bool:
         """检查是否需要情感分析。"""

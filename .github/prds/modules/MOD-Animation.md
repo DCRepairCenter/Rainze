@@ -2,7 +2,7 @@
 
 > **模块版本**: v1.0.0
 > **创建时间**: 2025-12-30
-> **关联PRD**: PRD-Rainze.md v3.0.3 §0.14
+> **关联PRD**: PRD-Rainze.md v3.1.0 §0.14
 > **关联技术栈**: TECH-Rainze.md v1.0.1
 > **模块层级**: 应用层 (Application Layer)
 > **优先级**: P0 (核心必需)
@@ -153,12 +153,9 @@ class AnimationFrame:
     metadata: Dict[str, any]
 
 
-@dataclass
-class EmotionTag:
-    """解析后的情感标签"""
-    tag: str                    # 情感类型 (happy, sad, angry, etc.)
-    intensity: float            # 强度 (0.0-1.0)
-    raw_text: str               # 原始标签文本
+# ⭐ 从 core.contracts 导入统一类型，禁止本模块重复定义
+from rainze.core.contracts.emotion import EmotionTag
+from rainze.core.observability import Tracer
 
 
 class AnimationController(QObject):

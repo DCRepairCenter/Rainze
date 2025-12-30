@@ -29,6 +29,7 @@ Rainze 是一个 **AI 驱动的桌面宠物应用**的**规划仓库**（无实�
 | "write tech spec" | tech-spec-writer | 技术规范文档 |
 | "write rust" | rust-coder | 安全惯用的 Rust 代码 |
 | "design API" | api-designer | OpenAPI 规范 + API 设计文档 |
+| "write code" | code-writer | Python/Rust 代码实现 |
 
 ## 关键约定
 
