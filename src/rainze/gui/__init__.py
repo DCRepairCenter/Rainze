@@ -10,6 +10,7 @@ Components / 组件:
 - TransparentWidget: 透明窗口基类 / Transparent widget base
 - ChatBubble: 聊天气泡 / Chat bubble
 - SystemTray: 系统托盘 / System tray
+- MenuSystem: 右键菜单系统 / Context menu system
 
 Reference:
     - MOD: .github/prds/modules/MOD-GUI.md
@@ -24,6 +25,7 @@ from .transparent_widget import TransparentWidget
 from .main_window import DisplayMode, MainWindow
 from .chat_bubble import ChatBubble
 from .system_tray import SystemTray
+from .menu_system import MenuItem, MenuSystem
 
 __all__ = [
     "TransparentWidget",
@@ -31,4 +33,6 @@ __all__ = [
     "DisplayMode",
     "ChatBubble",
     "SystemTray",
+    "MenuItem",
+    "MenuSystem",
 ]

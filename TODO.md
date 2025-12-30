@@ -8,7 +8,6 @@ AI 桌面宠物 Rainze 的根目录，聚合 PRD、技术栈、代码与配置�
 - [ ] 实现 State 模块（状态管理）
 - [ ] 实现 AI 模块（LLM 响应生成）
 - [ ] 实现 Memory 模块（记忆系统）
-- [ ] 实现右键菜单系统
 - [ ] 实现输入面板
 
 ### In Progress
@@ -24,4 +23,5 @@ AI 桌面宠物 Rainze 的根目录，聚合 PRD、技术栈、代码与配置�
   - [x] gui.main_window (MainWindow 桌宠主窗口)
   - [x] gui.chat_bubble (ChatBubble 聊天气泡)
   - [x] gui.system_tray (SystemTray 系统托盘)
+  - [x] gui.menu_system (MenuSystem 右键菜单系统) - 2025-12-30
   - [x] 创建占位图片资源 (assets/animations, assets/ui/icons)  
