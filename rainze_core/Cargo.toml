@@ -22,20 +22,24 @@ categories = ["api-bindings", "development-tools"]
 
 [lib]
 name = "rainze_core"
-crate-type = ["cdylib", "rlib"]
+# 仅 cdylib 用于 Python 扩展，rlib 与 abi3 不兼容
+# Only cdylib for Python extension, rlib not compatible with abi3
+crate-type = ["cdylib"]
 
 [dependencies]
 # PyO3 - Python 绑定 / Python Bindings
-pyo3 = { version = "0.23", features = ["extension-module"] }
+# 注意: 使用 abi3-py39 以支持 Python 3.9+ (包括 3.14)
+# Note: Using abi3-py39 for Python 3.9+ support (including 3.14)
+pyo3 = { version = "0.27", features = ["extension-module", "abi3-py39"] }
 
 # 系统信息 / System Information
-sysinfo = "0.32"
+sysinfo = "0.37"
 
 # 异步运行时 / Async Runtime
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.48", features = ["full"] }
 
 # 并行计算 / Parallel Computing
-rayon = "1.10"
+rayon = "1.11"
 
 # 错误处理 / Error Handling
 anyhow = "1.0"
@@ -50,7 +54,7 @@ tracing = "0.1"
 
 # Windows API (条件编译 / Conditional Compilation)
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = [
+windows = { version = "0.62", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_ProcessStatus",
