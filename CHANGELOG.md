@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **gui.menu_system** - 右键菜单系统 (MOD-GUI.md §3.5)
+  - `MenuItem` dataclass - 菜单项配置 (id, text, icon, shortcut, callback, enabled, visible, children, separator_after)
+  - `MenuSystem` class - 菜单管理器
+    - `setup_default_menu()` - 标准菜单结构
+    - `register_item()/unregister_item()` - 菜单项注册
+    - `update_item()` - 动态更新菜单项属性
+    - `add_dynamic_submenu()` - 动态子菜单支持
+    - `show_at(position)` - 显示菜单
+  - Signals: `menu_shown`, `menu_hidden`, `action_triggered(item_id)`
 - **项目初始化** - 完整的 Python + Rust 混合项目结构
   - `pyproject.toml` - Python 包配置 (uv + hatchling)
   - `rainze_core/Cargo.toml` - Rust crate 配置 (PyO3 + Maturin)

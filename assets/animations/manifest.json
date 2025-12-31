@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Animation Manifest",
+  "description": "动画清单配置 / Animation manifest configuration",
+  
+  "animations": {
+    "idle": {
+      "description": "待机动画 / Idle animation",
+      "frames": [
+        { "file": "frame_001.png", "duration_ms": 100 }
+      ],
+      "loop": true
+    },
+    
+    "ear_wiggle": {
+      "description": "摇耳朵 / Ear wiggle",
+      "frames": [
+        { "file": "frame_001.png", "duration_ms": 150 },
+        { "file": "frame_002.png", "duration_ms": 150 },
+        { "file": "frame_003.png", "duration_ms": 150 },
+        { "file": "frame_002.png", "duration_ms": 150 }
+      ],
+      "loop": false
+    },
+    
+    "thinking": {
+      "description": "思考动画 / Thinking animation",
+      "frames": [
+        { "file": "frame_001.png", "duration_ms": 500 }
+      ],
+      "loop": true
+    },
+    
+    "head_pat": {
+      "description": "摸头动画 / Head pat animation",
+      "frames": [
+        { "file": "frame_001.png", "duration_ms": 150 },
+        { "file": "frame_002.png", "duration_ms": 150 }
+      ],
+      "loop": false
+    },
+    
+    "happy": {
+      "description": "开心动画 / Happy animation",
+      "frames": [
+        { "file": "frame_001.png", "duration_ms": 200 },
+        { "file": "frame_002.png", "duration_ms": 200 },
+        { "file": "frame_003.png", "duration_ms": 200 },
+        { "file": "frame_002.png", "duration_ms": 200 }
+      ],
+      "loop": true
+    }
+  }
+}
+

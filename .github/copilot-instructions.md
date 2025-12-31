@@ -2,55 +2,117 @@
 
 ## 项目概述
 
-Rainze 是一个 **AI 驱动的桌面宠物应用**的**规划仓库**（无实际代码实现），采用 Python + Rust 混合架构。本仓库存储 PRD 文档、技术规范和 AI Agent 定义。
+Rainze 是一个 **AI 驱动的桌面宠物应用**，采用 Python + Rust 混合架构。
 
 **核心设计哲学**：AI 生成为主，配置为辅，预设文本仅作紧急兜底。
 
-## 仓库结构
+## 架构与数据流
 
 ```
-.github/
-├── agents/       # AI Agent 定义 (*.agent.md) - 触发词见下表
-├── instructions/ # 路径特定指令 (*.instructions.md)
-├── prds/         # PRD-Rainze.md (6800+ 行完整需求)
-├── references/   # 参考规范 (Conventional Commits, Keep a Changelog)
-├── roles/        # 角色定义 (PRD分析师, 技术规范撰写)
-└── techstacks/   # 技术选型报告 TECH-Rainze.md
+用户交互 → UCM (统一上下文管理器) → 场景分类 → Tier1/2/3 响应
+                    ↓
+              记忆系统 (FAISS + SQLite)
+                    ↓
+              Rust 性能层 (rainze_core)
 ```
 
-## AI Agent 触发
+**3 层响应策略**:
+- **Tier1**: 模板响应 (<50ms) - 点击、拖拽
+- **Tier2**: 规则生成 (<100ms) - 整点报时、系统警告
+- **Tier3**: LLM 生成 (<3s) - 对话、情感分析
 
-| 触发词 | Agent | 输出 |
-|--------|-------|------|
-| "scan repo" | repo-scanner | `.prompt/repo-index.md` |
-| "generate prompts" | prompt-generator | `.prompt/init.prompt.md` |
-| "create commit" | commit-helper | Conventional Commit 消息 |
-| "analyze PRD" | prd-analyst | Interface Flow 结构化分析 |
-| "write tech spec" | tech-spec-writer | 技术规范文档 |
-| "write rust" | rust-coder | 安全惯用的 Rust 代码 |
-| "design API" | api-designer | OpenAPI 规范 + API 设计文档 |
-| "write code" | code-writer | Python/Rust 代码实现 |
+## 开发命令
+
+```powershell
+# 环境初始化 (首次)
+make setup              # 创建venv + 安装依赖 + 构建Rust
+
+# 日常开发
+make build-dev          # Rust 开发模式构建 (maturin develop)
+make verify             # 验证 rainze_core 是否可导入
+make run                # 运行应用
+
+# 代码质量
+make check              # 运行 lint + typecheck + test
+make lint               # ruff check (不自动修复)
+make format             # ruff 格式化
+make typecheck          # mypy 类型检查
+make rust-check         # cargo clippy
+
+# 测试
+make test               # pytest 全量测试
+make test-unit          # 仅单元测试
+make test-cov           # 带覆盖率报告
+
+# 构建发布
+make build              # Rust release 模式构建
+make package            # 构建 wheel 包
+
+# 清理
+make clean              # 清理构建产物
+```
 
 ## 关键约定
 
-1. **索引优先**：使用文件引用 `[name](path#L1-L50)` 而非复制内容
-2. **语言约定**：自然语言用简体中文，代码/路径/变量名保持原样
-3. **证据规则**：指出问题时必须引用文件路径和行号
-4. **Commit 规范**：遵循 [Conventional Commits](references/git/conventional-commit.md)，AI 生成时添加 `Reviewed-by: [MODEL_NAME]`
-5. **PRD 格式**：使用 Interface Flow 树形结构（`|--` / `\--`），参考 [roles/product-requirements-analyst.md](roles/product-requirements-analyst.md)
-6. **Rust 风格**：遵循 [Rust Style Guide](references/rust/style.md)，优先借用而非 `.clone()`，避免滥用 `.unwrap()`
+### 跨模块契约 (PRD §0.15)
+**所有共享类型必须从 `rainze.core.contracts` 导入，禁止重复定义！**
 
-## 目标技术栈
+```python
+# ✅ 正确
+from rainze.core.contracts import EmotionTag, SceneType
 
-| 层级 | 技术 | 用途 |
-|------|------|------|
-| GUI | PySide6 (Qt6) | 透明窗口、动画 |
-| 业务 | Python 3.12+ | LLM 调用、插件 |
-| 性能 | Rust (PyO3) | 向量检索、系统监控 |
-| 存储 | FAISS + SQLite | 向量索引 + 结构化数据 |
+# ❌ 错误 - 不要在其他模块重复定义
+class EmotionTag: ...  # NEVER DO THIS
+```
 
-## 核心文档入口
+### UCM 入口规则
+所有用户交互必须经过 UCM，禁止直接调用 AI 服务。
 
-- **完整 PRD**：[prds/PRD-Rainze.md](prds/PRD-Rainze.md) (v3.0.3)
-- **技术选型**：[techstacks/TECH-Rainze.md](techstacks/TECH-Rainze.md) (v1.0.1)
-- **变更日志**：[CHANGELOG.md](../CHANGELOG.md)
+### 代码规范
+- **Python**: 全函数类型注解，Google-style docstrings，line-length=88
+- **Rust**: 使用 `anyhow` (应用) / `thiserror` (库)，`///` 文档注释
+- **双语注释**: `中文说明 / English description`
+- **Lint**: ruff 启用 E/W/F/I/B/C4/UP/ARG/SIM/TCH/PTH/ERA/PL/RUF 规则
+
+### 测试规范
+- 单元测试放 `tests/unit/`，集成测试放 `tests/integration/`
+- 使用 `pytest.mark.slow` 标记耗时测试
+- 异步测试自动识别 (`asyncio_mode="auto"`)
+- 覆盖率目标: `src/rainze/` 目录
+
+### Commit 规范
+遵循 Conventional Commits，AI 生成时添加 `Reviewed-by: [MODEL_NAME]`
+
+```
+feat|fix|docs|style|refactor|perf|test|chore|build|ci
+```
+
+## 项目结构
+
+| 目录 | 说明 |
+|------|------|
+| `src/rainze/` | Python 主代码 |
+| `src/rainze/core/contracts/` | 跨模块共享类型 ⚠️ |
+| `rainze_core/` | Rust 性能模块 (PyO3) |
+| `config/` | JSON 配置文件 |
+| `.github/prds/` | PRD 需求文档 |
+| `.github/prds/modules/` | 模块设计文档 (MOD-*.md) |
+
+## AI Agent 触发词
+
+| 触发词 | Agent | 用途 |
+|--------|-------|------|
+| "scan repo" | repo-scanner | 生成 `.prompt/repo-index.md` |
+| "generate prompts" | prompt-generator | 生成初始化提示词 |
+| "write code" | code-writer | Python/Rust 实现 |
+| "write rust" | rust-coder | Rust 模块 |
+| "create commit" | commit-helper | Commit 消息 |
+| "analyze PRD" | prd-analyst | 需求分析 |
+| "write tech spec" | tech-spec-writer | 技术规范文档 |
+| "design API" | api-designer | OpenAPI 规范 |
+
+## 核心文档
+
+- **PRD**: [.github/prds/PRD-Rainze.md](.github/prds/PRD-Rainze.md)
+- **技术选型**: [.github/techstacks/TECH-Rainze.md](.github/techstacks/TECH-Rainze.md)
+- **模块设计**: `.github/prds/modules/MOD-{name}.md`

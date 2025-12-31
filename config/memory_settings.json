@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Memory Settings",
+  "description": "记忆系统配置 / Memory system configuration",
+
+  "storage": {
+    "db_path": "./data/memory.db",
+    "faiss_index_path": "./data/memory.faiss",
+    "archive_path": "./data/archive/",
+    "enable_encryption": false
+  },
+
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "dimension": 768,
+    "batch_size": 32
+  },
+
+  "retrieval": {
+    "strategy_selection": {
+      "enable_smart_selection": true,
+      "fallback_strategy": "PARALLEL"
+    },
+    "fts5_top_k": 15,
+    "vector_top_k": 20,
+    "final_top_k": 5,
+    "similarity_threshold": 0.65,
+    "weights": {
+      "similarity": 0.4,
+      "recency": 0.3,
+      "importance": 0.2,
+      "frequency": 0.1
+    }
+  },
+
+  "async_vectorization": {
+    "enable": true,
+    "high_priority_threshold": 0.7,
+    "batch_size": 10,
+    "process_interval_seconds": 60
+  },
+
+  "lifecycle": {
+    "decay_rate": 0.98,
+    "archive_threshold_days": 30,
+    "archive_percentile": 20,
+    "max_memories": 50000
+  },
+
+  "conflict_detection": {
+    "enable": true,
+    "antonym_pairs": [
+      ["喜欢", "讨厌"],
+      ["喜欢", "不喜欢"],
+      ["爱", "恨"],
+      ["想要", "不想要"]
+    ],
+    "conflict_window_hours": 168
+  },
+
+  "importance_rules": {
+    "affinity_change_threshold": 5,
+    "level_up_importance": 0.95,
+    "keyword_boost": ["生日", "重要", "记住", "喜欢", "讨厌"],
+    "default_importance": 0.5
+  },
+
+  "working_memory": {
+    "max_conversation_turns": 20,
+    "context_window_tokens": 4000
+  }
+}

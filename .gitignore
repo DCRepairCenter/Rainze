@@ -49,6 +49,7 @@ htmlcov/
 # Logs
 *.log
 data/logs/
+logs/
 
 # Local data
 data/db/
@@ -57,9 +58,28 @@ data/cache/
 
 # Config secrets (keep templates)
 config/*.local.json
+config/secrets.json
+config/*secret*.json
+config/*key*.json
+config/*credential*.json
+config/api_settings.local.json
 .env
 .env.*
 !.env.example
+
+# API Keys & Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+*_secret.json
+*_credentials.json
+api_keys.json
+openai_key.txt
+anthropic_key.txt
+*.api_key
 
 # OS
 .DS_Store

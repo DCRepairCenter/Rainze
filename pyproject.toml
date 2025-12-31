@@ -26,37 +26,30 @@ classifiers = [
 dependencies = [
     # GUI 框架 / GUI Framework
     "pyside6>=6.8",
-    
     # HTTP 客户端 / HTTP Client
     "httpx>=0.28",
-    
     # LLM SDK
     "openai>=1.58",
     "anthropic>=0.40",
-    
     # 向量化与检索 / Vectorization & Retrieval
     "sentence-transformers>=3.3",
     "faiss-cpu>=1.9",
-    
     # 数据库与 ORM / Database & ORM
     "sqlalchemy>=2.0",
-    
     # 数据验证 / Data Validation
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
-    
     # 日志与调试 / Logging & Debugging
     "structlog>=24.4",
     "rich>=13.9",
-    
     # 中文分词 / Chinese Tokenization (for entity detection)
     "jieba>=0.42",
-    
     # 异步支持 / Async Support
     "anyio>=4.7",
-    
     # 文件监视 / File Watching
     "watchdog>=6.0",
+    "snownlp>=0.12.3",
+    "aiosqlite>=0.22.1",
 ]
 
 [project.optional-dependencies]

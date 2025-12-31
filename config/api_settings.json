@@ -1,15 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "API Settings",
-  "description": "LLM API 配置 / LLM API configuration",
+  "description": "LLM API 配置 / LLM API configuration. API keys should be set via environment variables, NOT in this file!",
   
-  "default_provider": "anthropic",
+  "default_provider": "openai",
   
   "providers": {
     "anthropic": {
       "enabled": true,
       "api_key_env": "ANTHROPIC_API_KEY",
-      "base_url": "https://api.anthropic.com",
+      "base_url": "https://api.anthropic.com/v1",
       "default_model": "claude-sonnet-4-20250514",
       "timeout_seconds": 30,
       "max_retries": 3,
@@ -19,7 +19,7 @@
       "enabled": true,
       "api_key_env": "OPENAI_API_KEY",
       "base_url": "https://api.openai.com/v1",
-      "default_model": "gpt-4o-mini",
+      "default_model": "grok-4-fast",
       "timeout_seconds": 30,
       "max_retries": 3,
       "retry_delay_ms": 500

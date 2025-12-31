@@ -2,7 +2,7 @@
 跨模块契约 - 共享类型定义
 Cross-Module Contracts - Shared Type Definitions
 
-⚠️ 重要 / IMPORTANT:
+重要 / IMPORTANT:
 所有模块必须从此包导入公共类型，禁止重复定义！
 All modules MUST import shared types from this package. NO duplicates!
 
@@ -25,41 +25,49 @@ Created: 2025-12-30
 
 from __future__ import annotations
 
-# TODO: 实现后取消注释 / Uncomment after implementation
-# from .emotion import EmotionTag
-# from .scene import SceneType, ResponseTier, SceneTierMapping, get_scene_tier_table
-# from .interaction import (
-#     InteractionSource,
-#     InteractionRequest,
-#     InteractionResponse,
-# )
+from .emotion import EmotionTag
+from .scene import (
+    ResponseTier,
+    SceneTierMapping,
+    SceneType,
+    get_scene_tier_table,
+    invalidate_scene_tier_cache,
+)
+from .interaction import (
+    InteractionRequest,
+    InteractionResponse,
+    InteractionSource,
+)
+from .ucm import (
+    ITierHandler,
+    IUnifiedContextManager,
+)
+
+# TODO: Rust bridge contracts 待实现
 # from .rust_bridge import (
 #     IRustMemorySearch,
 #     IRustSystemMonitor,
 #     IRustTextProcess,
 # )
-# from .ucm import IUnifiedContextManager
 
 __all__: list[str] = [
     # Emotion contracts / 情感契约
-    # "EmotionTag",
-    
+    "EmotionTag",
     # Scene contracts / 场景契约
-    # "SceneType",
-    # "ResponseTier",
-    # "SceneTierMapping",
-    # "get_scene_tier_table",
-    
+    "SceneType",
+    "ResponseTier",
+    "SceneTierMapping",
+    "get_scene_tier_table",
+    "invalidate_scene_tier_cache",
     # Interaction contracts / 交互契约
-    # "InteractionSource",
-    # "InteractionRequest",
-    # "InteractionResponse",
-    
-    # Rust bridge contracts / Rust 桥接契约
+    "InteractionSource",
+    "InteractionRequest",
+    "InteractionResponse",
+    # UCM contracts / UCM 契约
+    "IUnifiedContextManager",
+    "ITierHandler",
+    # Rust bridge contracts / Rust 桥接契约 (TODO)
     # "IRustMemorySearch",
     # "IRustSystemMonitor",
     # "IRustTextProcess",
-    
-    # UCM contract / UCM 契约
-    # "IUnifiedContextManager",
 ]

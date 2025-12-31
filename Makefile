@@ -102,20 +102,12 @@ build: build-rust install-rust
 .PHONY: build-rust
 build-rust:
 	@Write-Host "🦀 构建 Rust 模块 / Building Rust module..." -ForegroundColor Cyan
-	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; \
-	$$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; \
-	Push-Location $(RUST_TARGET); \
-	& "$(MATURIN)" build --release; \
-	Pop-Location
+	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; $$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; $$maturin = (Resolve-Path "$(MATURIN)").Path; Push-Location $(RUST_TARGET); & $$maturin build --release; Pop-Location
 
 .PHONY: build-dev
 build-dev:
 	@Write-Host "🔧 开发模式构建 / Development build..." -ForegroundColor Cyan
-	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; \
-	$$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; \
-	Push-Location $(RUST_TARGET); \
-	& "$(MATURIN)" develop; \
-	Pop-Location
+	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; $$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; $$maturin = (Resolve-Path "$(MATURIN)").Path; Push-Location $(RUST_TARGET); & $$maturin develop; Pop-Location
 
 .PHONY: install-rust
 install-rust:
@@ -168,12 +160,7 @@ check: lint typecheck test
 .PHONY: rust-check
 rust-check:
 	@Write-Host "🦀 Rust 检查 / Rust check..." -ForegroundColor Cyan
-	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; \
-	$$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; \
-	Push-Location $(RUST_TARGET); \
-	cargo check; \
-	cargo clippy; \
-	Pop-Location
+	@$$env:PATH = "$(MINGW_PATH);$$env:PATH"; $$env:PYO3_PYTHON = (Resolve-Path "$(PYTHON)").Path; Push-Location $(RUST_TARGET); cargo check; cargo clippy; Pop-Location
 
 # ============================================================================
 # 清理 / Clean
@@ -182,15 +169,7 @@ rust-check:
 .PHONY: clean
 clean:
 	@Write-Host "🧹 清理构建产物 / Cleaning build artifacts..." -ForegroundColor Cyan
-	@Remove-Item -Recurse -Force -ErrorAction SilentlyContinue \
-		$(RUST_TARGET)\target, \
-		dist, \
-		build, \
-		*.egg-info, \
-		.pytest_cache, \
-		.mypy_cache, \
-		.ruff_cache, \
-		__pycache__
+	@Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $(RUST_TARGET)\target, dist, build, *.egg-info, .pytest_cache, .mypy_cache, .ruff_cache, __pycache__
 	@Get-ChildItem -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 	@Write-Host "✅ 清理完成 / Clean complete!" -ForegroundColor Green
 
