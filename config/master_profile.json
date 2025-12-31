@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Master Profile",
+  "description": "用户画像配置 / User profile configuration. Reference: PRD 0.2 (Layer 1: Identity Layer)",
+  
+  "user": {
+    "nickname": "主人",
+    "birthday": null,
+    "timezone": "Asia/Shanghai",
+    "preferred_language": "zh-CN",
+    "preferences": {
+      "notification_style": "gentle",
+      "interaction_frequency": "moderate",
+      "dnd_hours": {
+        "enabled": false,
+        "start": "23:00",
+        "end": "07:00"
+      }
+    },
+    "notes": []
+  },
+  
+  "pet": {
+    "name": "Rainze",
+    "name_cn": "忆雨",
+    "personality_type": "gentle_playful",
+    "relationship_level": "friend",
+    "custom_traits": [],
+    "voice_style": "cute_casual"
+  },
+  
+  "relationship": {
+    "days_together": 0,
+    "interaction_count": 0,
+    "affinity_score": 50,
+    "memorable_events": [],
+    "last_interaction": null
+  },
+  
+  "facts": {
+    "user_likes": [],
+    "user_dislikes": [],
+    "important_dates": [],
+    "custom_facts": []
+  }
+}

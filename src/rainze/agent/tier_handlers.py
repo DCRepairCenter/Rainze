@@ -614,9 +614,41 @@ class Tier3LLMHandler(BaseTierHandler):
         获取默认系统提示词
         Get default system prompt
 
+        优先从 config/system_prompt.txt 加载，若不存在则使用内置默认值。
+        Load from config/system_prompt.txt first, fallback to built-in default.
+
         Returns:
             系统提示词 / System prompt
         """
+        import logging
+        from pathlib import Path
+
+        logger = logging.getLogger(__name__)
+
+        # 尝试多个配置路径 / Try multiple config paths
+        prompt_paths = [
+            Path("./config/system_prompt.txt"),
+            Path("config/system_prompt.txt"),
+            Path(__file__).parent.parent.parent.parent / "config" / "system_prompt.txt",
+        ]
+
+        for path in prompt_paths:
+            if path.exists():
+                try:
+                    content = path.read_text(encoding="utf-8")
+                    # 过滤掉注释行（以 # 开头）/ Filter out comment lines
+                    lines = [
+                        line for line in content.split("\n")
+                        if not line.strip().startswith("#")
+                    ]
+                    prompt = "\n".join(lines).strip()
+                    if prompt:
+                        logger.info(f"从文件加载系统提示词: {path.absolute()}")
+                        return prompt
+                except Exception as e:
+                    logger.warning(f"加载系统提示词失败 {path}: {e}")
+
+        logger.info("使用内置默认系统提示词")
         return """你是 Rainze，一个可爱的桌面宠物 AI 伴侣。
 
 你的性格特点：
