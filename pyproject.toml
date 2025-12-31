@@ -25,46 +25,46 @@ classifiers = [
 
 dependencies = [
     # GUI 框架 / GUI Framework
-    "pyside6>=6.8",
+    "pyside6>=6.10",
     # HTTP 客户端 / HTTP Client
     "httpx>=0.28",
     # LLM SDK
-    "openai>=1.58",
-    "anthropic>=0.40",
+    "openai>=2.14",
+    "anthropic>=0.75",
     # 向量化与检索 / Vectorization & Retrieval
-    "sentence-transformers>=3.3",
-    "faiss-cpu>=1.9",
+    "sentence-transformers>=5.2",
+    "faiss-cpu>=1.13",
     # 数据库与 ORM / Database & ORM
     "sqlalchemy>=2.0",
     # 数据验证 / Data Validation
-    "pydantic>=2.10",
-    "pydantic-settings>=2.7",
+    "pydantic>=2.12",
+    "pydantic-settings>=2.12",
     # 日志与调试 / Logging & Debugging
-    "structlog>=24.4",
-    "rich>=13.9",
+    "structlog>=25.5",
+    "rich>=14.2",
     # 中文分词 / Chinese Tokenization (for entity detection)
     "jieba>=0.42",
     # 异步支持 / Async Support
-    "anyio>=4.7",
+    "anyio>=4.12",
     # 文件监视 / File Watching
     "watchdog>=6.0",
     "snownlp>=0.12.3",
-    "aiosqlite>=0.22.1",
+    "aiosqlite>=0.22",
 ]
 
 [project.optional-dependencies]
 dev = [
     # 测试 / Testing
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "pytest-cov>=6.0",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.1",
     
     # 代码质量 / Code Quality
-    "ruff>=0.8",
-    "mypy>=1.13",
+    "ruff>=0.14",
+    "mypy>=1.19",
     
     # 预提交钩子 / Pre-commit Hooks
-    "pre-commit>=4.0",
+    "pre-commit>=4.1",
     
     # 类型存根 / Type Stubs
     "types-toml>=0.10",
@@ -72,9 +72,9 @@ dev = [
 
 build = [
     # 打包工具 / Build Tools
-    "maturin>=1.8",
-    "nuitka>=2.5",
-    "pyinstaller>=6.11",
+    "maturin>=1.10",
+    "nuitka>=2.7",
+    "pyinstaller>=6.13",
 ]
 
 [project.scripts]
