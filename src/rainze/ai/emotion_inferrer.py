@@ -132,7 +132,7 @@ class EmotionInferrer:
         # 尝试导入 SnowNLP / Try importing SnowNLP
         if enable_snownlp:
             try:
-                from snownlp import SnowNLP  # type: ignore[import-untyped]  # noqa: F401
+                from snownlp import SnowNLP  # noqa: F401
                 self._snownlp_available = True
                 logger.info("SnowNLP 可用，启用情感分析降级")
             except ImportError:

@@ -174,7 +174,7 @@ class TextEmbedder:
         bs = batch_size or self.config.batch_size
 
         # 编码文本 / Encode texts
-        embeddings: NDArray[np.float32] = self._model.encode(
+        embeddings: NDArray[np.float32] = self._model.encode(  # type: ignore[attr-defined]
             list(texts),
             batch_size=bs,
             convert_to_numpy=True,
@@ -200,7 +200,8 @@ class TextEmbedder:
             向量数组 / Embedding vector
         """
         result = self.embed([text])
-        return result.embeddings[0]
+        embedding: NDArray[np.float32] = result.embeddings[0]
+        return embedding
 
     @property
     def dimension(self) -> int:

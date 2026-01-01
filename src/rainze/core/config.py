@@ -85,7 +85,9 @@ class ConfigManager:
 
         # 检查缓存 / Check cache
         if use_cache and cache_key in self._cache:
-            return self._cache[cache_key]
+            cached_value = self._cache[cache_key]
+            assert isinstance(cached_value, model)
+            return cached_value
 
         # 加载原始数据 / Load raw data
         raw_data = self.get_raw(filename)
@@ -198,6 +200,13 @@ class ConfigManager:
                 filename=filename,
             ) from e
 
+        # 验证数据类型 / Validate data type
+        if not isinstance(data, dict):
+            raise ConfigError(
+                f"Expected dict, got {type(data).__name__}",
+                filename=filename,
+            )
+
         # 缓存 / Cache
         self._raw_cache[filename] = data
         return data
@@ -266,4 +275,4 @@ class ConfigManager:
         except ConfigError:
             if default_factory:
                 return default_factory()
-            return model()  # type: ignore[call-arg]
+            return model()

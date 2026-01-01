@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -31,10 +31,13 @@ _faiss_module = None
 logger = logging.getLogger(__name__)
 
 
-def _get_faiss():  # noqa: ANN202
+def _get_faiss() -> Any:
     """
     获取 FAISS 模块（延迟导入）
     Get FAISS module (lazy import)
+
+    Returns:
+        faiss module or raises RuntimeError if not available
     """
     global _faiss_module
     if _faiss_module is None:
@@ -198,7 +201,7 @@ class VectorSearcher:
                 self._next_id = data.get("next_id", len(self._id_map))
 
         self._initialized = True
-        logger.info(f"FAISS index loaded. Total vectors: {self._index.ntotal}")
+        logger.info(f"FAISS index loaded. Total vectors: {self._index.ntotal}")  # type: ignore[union-attr]
 
     def save(self) -> None:
         """
@@ -299,7 +302,7 @@ class VectorSearcher:
 
         # 添加到 FAISS / Add to FAISS
         ids_array = np.array(internal_ids, dtype=np.int64)
-        self._index.add_with_ids(valid_embeddings, ids_array)
+        self._index.add_with_ids(valid_embeddings, ids_array)  # type: ignore[attr-defined]
 
         logger.debug(f"Added {len(internal_ids)} vectors to FAISS index")
         return len(internal_ids)
@@ -345,13 +348,13 @@ class VectorSearcher:
 
         # 执行搜索 / Execute search
         # 如果索引为空，直接返回空结果
-        if self._index.ntotal == 0:
+        if self._index.ntotal == 0:  # type: ignore[attr-defined]
             return []
 
         # 调整 k 不超过索引中的向量数
-        actual_k = min(k, self._index.ntotal)
+        actual_k = min(k, self._index.ntotal)  # type: ignore[attr-defined]
 
-        distances, indices = self._index.search(query_vector, actual_k)
+        distances, indices = self._index.search(query_vector, actual_k)  # type: ignore[attr-defined]
 
         # 转换结果 / Convert results
         results = []
@@ -404,7 +407,7 @@ class VectorSearcher:
 
         # FAISS IndexIDMap 支持 remove_ids
         ids_to_remove = np.array(internal_ids_to_remove, dtype=np.int64)
-        removed = self._index.remove_ids(ids_to_remove)
+        removed = self._index.remove_ids(ids_to_remove)  # type: ignore[attr-defined]
 
         logger.debug(f"Removed {removed} vectors from FAISS index")
         return int(removed)
@@ -432,7 +435,7 @@ class VectorSearcher:
         """
         if not self._initialized or self._index is None:
             return 0
-        return self._index.ntotal
+        return self._index.ntotal  # type: ignore[no-any-return, attr-defined]
 
     @property
     def is_initialized(self) -> bool:

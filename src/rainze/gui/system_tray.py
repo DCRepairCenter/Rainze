@@ -78,11 +78,11 @@ class SystemTray(QObject):
         self._app_name = app_name
         self._icon_path = icon_path or Path("./assets/ui/icons/tray_icon.png")
 
-        # 托盘图标 / Tray icon
-        self._tray_icon: Optional[QSystemTrayIcon] = None
-
-        # 托盘菜单 / Tray menu
-        self._tray_menu: Optional[QMenu] = None
+        # 托盘图标和菜单将在 setup 方法中初始化 / Tray icon and menu will be initialized in setup methods
+        # 使用占位符避免 None，因为 setup 方法会立即调用
+        # Use placeholders to avoid None since setup methods are called immediately
+        self._tray_icon: QSystemTrayIcon = QSystemTrayIcon()
+        self._tray_menu: QMenu = QMenu()
 
         # 菜单项 / Menu actions
         self._actions: dict[str, QAction] = {}
@@ -106,7 +106,11 @@ class SystemTray(QObject):
             icon = QIcon(str(self._icon_path))
         else:
             # 使用应用图标作为回退 / Fallback to app icon
-            icon = QApplication.instance().windowIcon()
+            app = QApplication.instance()
+            if app is not None and isinstance(app, QApplication):
+                icon = app.windowIcon()
+            else:
+                icon = QIcon()
             if icon.isNull():
                 # 创建默认图标 / Create default icon
                 icon = QIcon()

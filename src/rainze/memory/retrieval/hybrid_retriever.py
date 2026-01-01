@@ -384,7 +384,7 @@ class HybridRetriever:
 
     async def _fetch_and_rank_memories(
         self,
-        fts_results: List[tuple],
+        fts_results: List[tuple[str, float]],
         vector_scores: Dict[str, float],
         query: str,  # noqa: ARG002 - 保留用于未来扩展
         time_window: Optional[TimeWindow],

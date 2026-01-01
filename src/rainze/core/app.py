@@ -244,10 +244,13 @@ class Application:
         # 处理 SIGINT (Ctrl+C) / Handle SIGINT
         if sys.platform != "win32":
             for sig in (signal.SIGTERM, signal.SIGINT):
-                loop.add_signal_handler(
-                    sig,
-                    lambda s=sig: asyncio.create_task(self._handle_signal(s)),
-                )
+                # 创建信号处理器 / Create signal handler
+                def make_handler(s: signal.Signals) -> Callable[[], None]:
+                    def handler() -> None:
+                        asyncio.create_task(self._handle_signal(s))
+                    return handler
+
+                loop.add_signal_handler(sig, make_handler(sig))
 
         try:
             loop.run_until_complete(self._run_async())

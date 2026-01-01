@@ -280,7 +280,7 @@ class MainWindow(TransparentWidget):
 
     # === 状态保存/恢复 / State Save/Restore ===
 
-    def save_position(self) -> dict:
+    def save_position(self) -> dict[str, int | str]:
         """
         保存窗口位置
         Save window position
@@ -294,7 +294,7 @@ class MainWindow(TransparentWidget):
             "mode": self._display_mode,
         }
 
-    def restore_position(self, data: dict) -> None:
+    def restore_position(self, data: dict[str, int | str]) -> None:
         """
         恢复窗口位置
         Restore window position
@@ -302,9 +302,14 @@ class MainWindow(TransparentWidget):
         Args:
             data: save_position 返回的字典 / Dict from save_position
         """
-        x = data.get("x", 0)
-        y = data.get("y", 0)
-        mode = data.get("mode", DisplayMode.FLOATING)
+        x_val = data.get("x", 0)
+        y_val = data.get("y", 0)
+        mode_val = data.get("mode", DisplayMode.FLOATING)
+
+        # 类型转换确保正确类型 / Type conversion to ensure correct types
+        x = int(x_val) if isinstance(x_val, int) else 0
+        y = int(y_val) if isinstance(y_val, int) else 0
+        mode = str(mode_val) if isinstance(mode_val, str) else DisplayMode.FLOATING
 
         self.move(x, y)
         self.set_display_mode(mode)

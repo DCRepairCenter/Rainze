@@ -29,7 +29,8 @@ import asyncio
 import sys
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Coroutine
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from PySide6.QtCore import QObject, Signal
 
@@ -46,7 +47,11 @@ if TYPE_CHECKING:
 # ========================================
 
 
-def run_async_in_thread(coro, callback=None, error_callback=None):  # noqa: ANN001, ANN201
+def run_async_in_thread(
+    coro: Coroutine[None, None, None],
+    callback: Callable[[], None] | None = None,
+    error_callback: Callable[[Exception], None] | None = None,
+) -> None:
     """
     在单独线程中运行异步任务
     Run async coroutine in separate thread
@@ -56,19 +61,13 @@ def run_async_in_thread(coro, callback=None, error_callback=None):  # noqa: ANN0
         callback: 成功回调 / Success callback
         error_callback: 错误回调 / Error callback
     """
-    def _run():  # noqa: ANN202
+    def _run() -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(coro)
             if callback:
-                # 使用 Qt 的线程安全方式调用回调
-                from PySide6.QtCore import QMetaObject, Qt
-                QMetaObject.invokeMethod(
-                    callback.__self__ if hasattr(callback, '__self__') else None,
-                    callback.__name__ if hasattr(callback, '__name__') else 'handle_result',
-                    Qt.ConnectionType.QueuedConnection,
-                )
+                callback()
         except Exception as e:
             if error_callback:
                 error_callback(e)
@@ -596,7 +595,7 @@ def main() -> int:
     # 2.1 加载应用配置 / Load app settings
     import json
     app_settings_path = config_dir / "app_settings.json"
-    app_settings: dict = {}
+    app_settings: dict[str, Any] = {}
     if app_settings_path.exists():
         with open(app_settings_path, encoding="utf-8") as f:
             app_settings = json.load(f)

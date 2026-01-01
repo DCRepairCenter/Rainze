@@ -146,9 +146,9 @@ class EventBus:
             self._handlers[event_type] = []
 
         entry = _HandlerEntry(
-            handler=handler,  # type: ignore[arg-type]
+            handler=handler,
             priority=priority,
-            filter_func=filter_func,  # type: ignore[arg-type]
+            filter_func=filter_func,
         )
         self._handlers[event_type].append(entry)
 

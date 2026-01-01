@@ -32,6 +32,8 @@ dependencies = [
     "openai>=2.14",
     "anthropic>=0.75",
     # 向量化与检索 / Vectorization & Retrieval
+    # Note: NumPy must be <2.0 for FAISS compatibility on ARM64
+    "numpy>=1.24,<2.0",
     "sentence-transformers>=5.2",
     "faiss-cpu>=1.13",
     # 数据库与 ORM / Database & ORM

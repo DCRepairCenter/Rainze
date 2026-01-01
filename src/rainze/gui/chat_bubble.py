@@ -102,10 +102,12 @@ class ChatBubble(TransparentWidget):
         self._displayed_chars: int = 0
         self._is_typing: bool = False
 
-        # UI 组件 / UI components
-        self._text_label: Optional[QLabel] = None
-        self._like_button: Optional[QPushButton] = None
-        self._dislike_button: Optional[QPushButton] = None
+        # UI 组件将在 setup_ui() 中初始化 / UI components will be initialized in setup_ui()
+        # 使用占位符避免 None，因为 setup_ui() 会立即调用
+        # Use placeholder to avoid None since setup_ui() is called immediately
+        self._text_label: QLabel = QLabel()
+        self._like_button: QPushButton | None = None
+        self._dislike_button: QPushButton | None = None
 
         # 定时器 / Timers
         self._typing_timer = QTimer(self)

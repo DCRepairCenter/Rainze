@@ -8,8 +8,15 @@ pytest configuration and shared fixtures.
 
 from __future__ import annotations
 
+import os
 import pytest
 from pathlib import Path
+
+# 设置环境变量避免 FAISS 多线程冲突
+# Set environment variables to avoid FAISS multi-threading conflicts
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
 @pytest.fixture

@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtGui import QPainter, QPixmap
@@ -198,7 +198,7 @@ class AnimationController(QObject):
         self._random_action_timer = QTimer(self)
         self._random_action_timer.timeout.connect(self._on_random_action_timer)
         # 随机动作配置缓存 / Random action config cache
-        self._random_action_config: Optional[Dict] = None
+        self._random_action_config: dict[str, Any] | None = None
 
         # ========== 行为脚本系统 / Behavior Script System ==========
         self._behavior_manager: Optional["BehaviorManager"] = None
@@ -444,8 +444,13 @@ class AnimationController(QObject):
         if self._behavior_manager is None and self._resource_path:
             self._load_behavior_script()
 
+        # 检查资源路径是否设置 / Check if resource path is set
+        if not self._resource_path:
+            logger.warning("资源路径未设置，无法加载动画")
+            return
+
         # 构建动画路径 / Build animation path
-        animation_path = Path(self._resource_path) / animation_name / variant
+        animation_path = self._resource_path / animation_name / variant
 
         if not animation_path.exists():
             logger.warning(f"动画路径不存在: {animation_path}")
@@ -460,7 +465,7 @@ class AnimationController(QObject):
             self._playing_random_action = False
 
         # 尝试加载清单文件 / Try to load manifest file
-        manifest_path = Path(self._resource_path) / "manifest.json"
+        manifest_path = self._resource_path / "manifest.json"
         manifest_config = None
 
         if manifest_path.exists():
@@ -767,7 +772,7 @@ class AnimationController(QObject):
 
         try:
             effect_type = EffectType(effect_name)
-            overlay.play_effect(effect_type, duration_ms=duration_ms)
+            overlay.play_effect(effect_type, duration_ms=duration_ms)  # type: ignore[attr-defined]
         except ValueError:
             import logging
             logger = logging.getLogger(__name__)
