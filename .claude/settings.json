@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(make:*)",
+      "Bash(cargo:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(pytest:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python -c:*)",
+      "Bash(uv:*)",
+      "Bash(pip:*)",
+      "Bash(gh:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./**/credentials*)"
+    ]
+  },
+  "env": {
+    "PYTHONPATH": "src"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-edit.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
